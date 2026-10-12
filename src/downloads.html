@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worldcraft Browser // Downloads</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      background: #040804;
+      background-image: 
+        radial-gradient(rgba(0, 255, 102, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(0, 255, 102, 0.02) 1px, transparent 1px);
+      background-size: 20px 20px, 100% 4px;
+      padding: 24px;
+      overflow-y: auto;
+      font-family: var(--font-sans);
+      color: var(--text-primary);
+    }
+    .downloads-page-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-neon);
+      box-shadow: 0 0 25px rgba(0, 255, 102, 0.15);
+      border-radius: var(--radius-small);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .downloads-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .downloads-page-stats {
+      display: flex;
+      gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+      padding: 10px 14px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .stat-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-val {
+      color: var(--neon-green);
+      font-weight: 700;
+    }
+    .downloads-standalone-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="downloads-page-container">
+    <!-- Header -->
+    <div class="downloads-page-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <img src="assets/worldcraft-icon.svg" width="28" height="28" alt="Worldcraft Icon">
+        <div>
+          <h1 class="modal-title" style="margin:0; font-size:16px;">WORLDCRAFT BROWSER // DOWNLOAD MANAGER</h1>
+          <p style="margin:2px 0 0 0; font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">
+            MATRIX DATA STREAM ARCHIVE &amp; SESSION TRANSFERS
+          </p>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button id="btn-clear-history" class="btn-secondary" style="padding:5px 12px; font-size:11px;">
+          [ HISTORIE LEEREN ]
+        </button>
+        <span class="badge-status" style="border-color: var(--neon-green); color: var(--neon-green);">INTERNAL TAB</span>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="downloads-page-stats">
+      <div class="stat-indicator">
+        <span>GESAMT:</span>
+        <span id="stat-total" class="stat-val">0</span>
+      </div>
+      <div class="stat-indicator">
+        <span>STREAMING (AKTIV):</span>
+        <span id="stat-active" class="stat-val">0</span>
+      </div>
+      <div class="stat-indicator">
+        <span>ENTSCHLÜSSELT &amp; BEREIT:</span>
+        <span id="stat-completed" class="stat-val">0</span>
+      </div>
+    </div>
+
+    <!-- Downloads List -->
+    <div id="downloads-list" class="downloads-standalone-list">
+      <div class="datastream-empty-state">
+        <img src="assets/datastream-globe.jpg" class="datastream-globe-img" alt="Wireframe Globe">
+        <div class="datastream-idle-text">[ DATASTREAM IDLE // KEINE DOWNLOADS VORHANDEN ]</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    let currentDownloads = [];
+
+    function formatBytes(bytes) {
+      if (typeof bytes !== 'number' || bytes < 0 || isNaN(bytes)) return 'UNKNOWN';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function formatSpeed(bytesPerSec) {
+      if (typeof bytesPerSec !== 'number' || bytesPerSec <= 0 || isNaN(bytesPerSec)) return '0.0 KB/S';
+      if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/S';
+      return (bytesPerSec / (1024 * 1024)).toFixed(1) + ' MB/S';
+    }
+
+    function updateStats() {
+      const totalEl = document.getElementById('stat-total');
+      const activeEl = document.getElementById('stat-active');
+      const completedEl = document.getElementById('stat-completed');
+      if (!totalEl) return;
+
+      const activeCount = currentDownloads.filter((d) => d.state === 'progressing').length;
+      const completedCount = currentDownloads.filter((d) => d.state === 'completed').length;
+
+      totalEl.textContent = currentDownloads.length;
+      activeEl.textContent = activeCount;
+      completedEl.textContent = completedCount;
+    }
+
+    function renderList() {
+      const container = document.getElementById('downloads-list');
+      if (!container) return;
+
+      updateStats();
+
+      if (currentDownloads.length === 0) {
+        container.innerHTML = `
+          <div class="datastream-empty-state">
+            <img src="assets/datastream-globe.jpg" class="datastream-globe-img" alt="Wireframe Globe">
+            <div class="datastream-idle-text">[ DATASTREAM IDLE // KEINE DOWNLOADS VORHANDEN ]</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+
+      currentDownloads.forEach((dl) => {
+        const card = document.createElement('div');
+        card.className = 'download-card';
+
+        const top = document.createElement('div');
+        top.className = 'download-card-top';
+
+        const name = document.createElement('span');
+        name.className = 'download-file-name';
+        name.textContent = dl.fileName;
+        name.title = dl.fileName;
+
+        const badge = document.createElement('span');
+        badge.className = 'download-state-badge ' + dl.state;
+        if (dl.state === 'completed') badge.textContent = '[ DECRYPTED & READY ]';
+        else if (dl.state === 'progressing') badge.textContent = 'STREAMING...';
+        else if (dl.state === 'cancelled') badge.textContent = 'CANCELLED';
+        else badge.textContent = 'INTERRUPTED';
+
+        top.appendChild(name);
+        top.appendChild(badge);
+
+        // Matrix Data Stream Graphic Materialization
+        const streamContainer = document.createElement('div');
+        streamContainer.className = 'matrix-materialize-container';
+
+        const grid = document.createElement('div');
+        grid.className = 'matrix-materialize-grid';
+
+        const fill = document.createElement('div');
+        fill.className = 'matrix-materialize-fill';
+        const percentWidth = dl.percent !== null && dl.percent !== undefined
+          ? Math.min(100, Math.max(0, dl.percent))
+          : (dl.state === 'completed' ? 100 : 35);
+        fill.style.width = percentWidth + '%';
+
+        const edge = document.createElement('div');
+        edge.className = 'matrix-materialize-edge';
+        if (percentWidth >= 100 || dl.state === 'completed') {
+          edge.style.display = 'none';
+        }
+        fill.appendChild(edge);
+
+        const glyphs = document.createElement('div');
+        glyphs.className = 'matrix-materialize-text';
+        glyphs.textContent = dl.state === 'completed'
+          ? '01010101 [ DECRYPTED & READY ] 10101010 01101100'
+          : '7F A2 0B 9C 4D 8E 10 01 AF BC DE 01 22 34 56 78 9A BC DE F0';
+
+        streamContainer.appendChild(grid);
+        streamContainer.appendChild(fill);
+        streamContainer.appendChild(glyphs);
+
+        // Terminal Status Line
+        const statusLine = document.createElement('div');
+        statusLine.className = 'terminal-status-line';
+        const speedStr = formatSpeed(dl.speed);
+        const recStr = formatBytes(dl.receivedBytes);
+        const totStr = dl.totalBytes > 0 ? formatBytes(dl.totalBytes) : 'UNKNOWN';
+        const progStr = dl.percent !== null && dl.percent !== undefined
+          ? (dl.percent + '%')
+          : (dl.state === 'completed' ? '100%' : 'UNKNOWN');
+
+        let statusText = '[ SPEED: ' + speedStr + ' // PROGRESS: ' + progStr + ' // DATA: ' + recStr + '/' + totStr + ' ]';
+        if (dl.savePath) {
+          statusText += ' // PATH: ' + dl.savePath;
+        }
+        statusLine.textContent = statusText;
+
+        // Action Buttons
+        const actions = document.createElement('div');
+        actions.className = 'download-card-actions';
+
+        if (dl.state === 'completed') {
+          const btnFolder = document.createElement('button');
+          btnFolder.className = 'btn-primary';
+          btnFolder.style.cssText = 'padding:4px 10px; font-size:11px;';
+          btnFolder.textContent = '[ IM ORDNER ANZEIGEN ]';
+          btnFolder.addEventListener('click', async () => {
+            if (window.worldcraft && window.worldcraft.downloads) {
+              const res = await window.worldcraft.downloads.showInFolder(dl.id);
+              if (res && !res.ok) alert(res.error || 'Fehler beim Anzeigen im Ordner');
+            }
+          });
+
+          const btnOpen = document.createElement('button');
+          btnOpen.className = 'btn-secondary';
+          btnOpen.style.cssText = 'padding:4px 10px; font-size:11px;';
+          btnOpen.textContent = '[ ÖFFNEN ]';
+          btnOpen.addEventListener('click', async () => {
+            if (window.worldcraft && window.worldcraft.downloads) {
+              const res = await window.worldcraft.downloads.open(dl.id);
+              if (res && !res.ok) alert(res.error || 'Fehler beim Öffnen der Datei');
+            }
+          });
+
+          const btnDelete = document.createElement('button');
+          btnDelete.className = 'btn-secondary';
+          btnDelete.style.cssText = 'padding:4px 10px; font-size:11px; color:#ff7777;';
+          btnDelete.textContent = '[ LÖSCHEN ]';
+          btnDelete.addEventListener('click', async () => {
+            if (window.worldcraft && window.worldcraft.downloads) {
+              await window.worldcraft.downloads.removeHistoryEntry(dl.id);
+              loadDownloads();
+            }
+          });
+
+          actions.appendChild(btnFolder);
+          actions.appendChild(btnOpen);
+          actions.appendChild(btnDelete);
+        } else if (dl.state === 'progressing') {
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'btn-secondary';
+          btnCancel.style.cssText = 'padding:4px 10px; font-size:11px; color:#ff7777;';
+          btnCancel.textContent = '[ ABBRECHEN ]';
+          btnCancel.addEventListener('click', async () => {
+            if (window.worldcraft && window.worldcraft.downloads) {
+              await window.worldcraft.downloads.cancel(dl.id);
+            }
+          });
+          actions.appendChild(btnCancel);
+        } else {
+          const btnDelete = document.createElement('button');
+          btnDelete.className = 'btn-secondary';
+          btnDelete.style.cssText = 'padding:4px 10px; font-size:11px; color:#ff7777;';
+          btnDelete.textContent = '[ AUS VERLAUF ENTFERNEN ]';
+          btnDelete.addEventListener('click', async () => {
+            if (window.worldcraft && window.worldcraft.downloads) {
+              await window.worldcraft.downloads.removeHistoryEntry(dl.id);
+              loadDownloads();
+            }
+          });
+          actions.appendChild(btnDelete);
+        }
+
+        card.appendChild(top);
+        card.appendChild(streamContainer);
+        card.appendChild(statusLine);
+        if (actions.children.length > 0) {
+          card.appendChild(actions);
+        }
+
+        container.appendChild(card);
+      });
+    }
+
+    async function loadDownloads() {
+      if (!window.worldcraft || !window.worldcraft.downloads) return;
+      try {
+        const res = await window.worldcraft.downloads.list();
+        if (res && res.ok) {
+          currentDownloads = res.data || [];
+          renderList();
+        }
+      } catch (err) {
+        console.error('Failed to load downloads:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnClear = document.getElementById('btn-clear-history');
+      if (btnClear) {
+        btnClear.addEventListener('click', async () => {
+          if (window.worldcraft && window.worldcraft.downloads) {
+            await window.worldcraft.downloads.clearCompleted();
+            loadDownloads();
+          }
+        });
+      }
+
+      loadDownloads();
+
+      if (window.worldcraft && window.worldcraft.events) {
+        window.worldcraft.events.onDownloadsUpdated((dl) => {
+          const idx = currentDownloads.findIndex((d) => d.id === dl.id);
+          if (idx !== -1) {
+            currentDownloads[idx] = { ...currentDownloads[idx], ...dl };
+          } else {
+            currentDownloads.unshift({ ...dl });
+          }
+          renderList();
+        });
+
+        window.worldcraft.events.onDownloadDone((dl) => {
+          const idx = currentDownloads.findIndex((d) => d.id === dl.id);
+          if (idx !== -1) {
+            currentDownloads[idx] = { ...currentDownloads[idx], ...dl };
+          } else {
+            currentDownloads.unshift({ ...dl });
+          }
+          renderList();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

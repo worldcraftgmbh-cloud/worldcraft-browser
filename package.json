@@ -1,0 +1,96 @@
+{
+  "name": "worldcraft-browser",
+  "version": "1.2.0",
+  "description": "Futuristic Matrix/Cyberpunk Desktop Web Browser by Worldcraft Systems",
+  "main": "main.js",
+  "author": "Worldcraft Systems",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "test": "node --test",
+    "verify": "node scripts/verify-build.js",
+    "build": "npm run test && npm run verify && electron-builder --win nsis --x64",
+    "dist": "electron-builder --win nsis --x64",
+    "build:dir": "electron-builder --win --dir --x64",
+    "build:portable": "electron-builder --win portable --x64"
+  },
+  "dependencies": {
+    "@google/genai": "^2.28.0",
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.worldcraft.browser",
+    "productName": "Worldcraft Browser",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "worldcraftgmbh-cloud",
+        "repo": "worldcraft-browser"
+      }
+    ],
+    "protocols": [
+      {
+        "name": "HTTP-Verbindungen",
+        "schemes": [
+          "http",
+          "https"
+        ]
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": "html",
+        "name": "HTML-Dokument",
+        "role": "Viewer"
+      },
+      {
+        "ext": "htm",
+        "name": "HTML-Dokument",
+        "role": "Viewer"
+      }
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "services/**/*",
+      "locales/**/*",
+      "package.json",
+      "!tests/**",
+      "!scripts/**",
+      "!README.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Worldcraft Browser Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Worldcraft Browser",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeader": "build/installerHeader.bmp",
+      "installerSidebar": "build/installerSidebar.bmp"
+    }
+  }
+}

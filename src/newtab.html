@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worldcraft // New Tab</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('assets/cyberpunk-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: var(--font-mono, 'Consolas', monospace);
+      color: var(--text-primary, #e5ffeb);
+      box-sizing: border-box;
+    }
+
+    .newtab-container {
+      width: 100%;
+      max-width: 860px;
+      padding: 60px 20px 80px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      z-index: 1;
+    }
+
+    .home-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .home-logo {
+      width: 440px;
+      max-width: 90vw;
+      height: auto;
+      filter: drop-shadow(0 0 16px rgba(0, 255, 102, 0.3));
+    }
+
+    .home-clock-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 18px;
+      background: rgba(20, 27, 20, 0.6);
+      border: 1px solid var(--border-color, rgba(0, 255, 102, 0.22));
+      border-radius: var(--radius-large, 16px);
+      backdrop-filter: blur(8px);
+    }
+
+    #home-clock {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--neon-green, #00ff66);
+      text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+    }
+
+    #home-date {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--text-secondary, #8baa94);
+    }
+
+    .home-search-wrapper {
+      width: 100%;
+    }
+
+    .home-search-box {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      background: rgba(13, 17, 13, 0.85);
+      border: 1px solid var(--border-color, rgba(0, 255, 102, 0.22));
+      border-radius: var(--radius-medium, 10px);
+      padding: 6px 14px;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .home-search-box:focus-within {
+      border-color: var(--neon-green, #00ff66);
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.25);
+    }
+
+    #home-search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary, #e5ffeb);
+      font-family: var(--font-mono, monospace);
+      font-size: 14px;
+    }
+
+    #btn-home-search {
+      background: var(--neon-green, #00ff66);
+      color: #050805;
+      font-weight: 700;
+      border: none;
+      padding: 8px 18px;
+      border-radius: var(--radius-small, 6px);
+      cursor: pointer;
+      font-family: var(--font-mono, monospace);
+      letter-spacing: 1px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    #btn-home-search:hover {
+      background: #33ff88;
+      transform: translateY(-1px);
+    }
+
+    .speed-dial-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .speed-dial-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color, rgba(0, 255, 102, 0.22));
+      padding-bottom: 8px;
+    }
+
+    .speed-dial-title {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--neon-green, #00ff66);
+      font-weight: 700;
+    }
+
+    .speed-dial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+      width: 100%;
+    }
+
+    .speed-dial-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20, 27, 20, 0.7);
+      border: 1px solid var(--border-color, rgba(0, 255, 102, 0.22));
+      border-radius: var(--radius-medium, 10px);
+      padding: 18px 12px;
+      gap: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .speed-dial-tile:hover {
+      border-color: var(--neon-green, #00ff66);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 255, 102, 0.2);
+      background: rgba(25, 34, 25, 0.85);
+    }
+
+    .speed-dial-tile .tile-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--neon-green, #00ff66);
+    }
+
+    .speed-dial-tile .tile-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary, #e5ffeb);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="newtab-container">
+    <div class="home-brand">
+      <img src="assets/worldcraft-logo.svg" alt="Worldcraft Browser Logo" class="home-logo">
+      <div class="home-clock-container">
+        <span id="home-clock">00:00:00</span>
+        <span id="home-date">--.--.----</span>
+      </div>
+    </div>
+
+    <div class="home-search-wrapper">
+      <form id="home-search-form" class="home-search-box">
+        <input type="text" id="home-search-input" placeholder="Google Suche oder Matrix-URL eingeben..." autocomplete="off">
+        <button type="submit" id="btn-home-search">SUCHEN</button>
+      </form>
+    </div>
+
+    <div class="speed-dial-section">
+      <div class="speed-dial-header">
+        <span class="speed-dial-title">SPEED DIAL // SCHNELLZUGRIFF</span>
+      </div>
+      <div id="speed-dial-grid" class="speed-dial-grid">
+        <a href="https://www.youtube.com" class="speed-dial-tile" data-url="https://www.youtube.com">
+          <div class="tile-icon">▶</div>
+          <span class="tile-title">YouTube</span>
+        </a>
+        <a href="https://www.twitch.tv" class="speed-dial-tile" data-url="https://www.twitch.tv">
+          <div class="tile-icon">👾</div>
+          <span class="tile-title">Twitch</span>
+        </a>
+        <a href="https://github.com" class="speed-dial-tile" data-url="https://github.com">
+          <div class="tile-icon">🐙</div>
+          <span class="tile-title">GitHub</span>
+        </a>
+        <a href="internal://radio" class="speed-dial-tile" data-url="internal://radio">
+          <div class="tile-icon">🎵</div>
+          <span class="tile-title">WorldCraft Radio</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Clock updater
+    function updateClock() {
+      const now = new Date();
+      const clockEl = document.getElementById('home-clock');
+      const dateEl = document.getElementById('home-date');
+      if (clockEl) {
+        clockEl.textContent = now.toLocaleTimeString('de-DE');
+      }
+      if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString('de-DE');
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Global navigation interceptor: all links open via tabs.create or direct navigation
+    document.addEventListener('click', (event) => {
+      const anchor = event.target.closest('a');
+      if (!anchor) return;
+      const url = anchor.getAttribute('data-url') || anchor.href;
+      if (!url) return;
+      event.preventDefault();
+      if (window.worldcraft && window.worldcraft.tabs && typeof window.worldcraft.tabs.create === 'function') {
+        window.worldcraft.tabs.create(url);
+      } else {
+        window.location.href = url;
+      }
+    });
+
+    // Search form
+    const searchForm = document.getElementById('home-search-form');
+    const searchInput = document.getElementById('home-search-input');
+    if (searchForm && searchInput) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const val = searchInput.value.trim();
+        if (!val) return;
+        let target = val;
+        if (/^https?:\/\//i.test(val)) {
+          target = val;
+        } else if (/^www\./i.test(val) || /\.[a-z]{2,}(\/.*)?$/i.test(val)) {
+          target = 'https://' + val;
+        } else {
+          target = 'https://www.google.com/search?q=' + encodeURIComponent(val);
+        }
+        if (window.worldcraft && window.worldcraft.tabs) {
+          window.worldcraft.tabs.create(target);
+        } else {
+          window.location.href = target;
+        }
+      });
+    }
+
+    // Dynamic Custom Background application
+    function applyBackgroundState(s) {
+      if (!s) return;
+      if (s.customBackgroundMode === 'url' && s.customBackgroundUrl) {
+        document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url("${s.customBackgroundUrl}")`;
+      } else if (s.customBackgroundMode === 'local' && s.customBackgroundLocal) {
+        document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url("${s.customBackgroundLocal}")`;
+      } else {
+        document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('assets/cyberpunk-bg.png')`;
+      }
+    }
+
+    async function initBackground() {
+      if (window.worldcraft && window.worldcraft.settings) {
+        try {
+          const res = await window.worldcraft.settings.get();
+          if (res && res.ok && res.data) {
+            applyBackgroundState(res.data);
+          }
+        } catch(e) {}
+      }
+
+      if (window.worldcraft && window.worldcraft.events && typeof window.worldcraft.events.onSettingsUpdated === 'function') {
+        window.worldcraft.events.onSettingsUpdated((newSettings) => {
+          applyBackgroundState(newSettings);
+        });
+      }
+    }
+    initBackground();
+  </script>
+</body>
+</html>

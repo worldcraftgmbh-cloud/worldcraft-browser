@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http:; font-src 'self'; connect-src 'self' https: http:;">
+  <title>Worldcraft Browser</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- 1. TOP TAB MANAGEMENT BAR -->
+    <header id="tab-bar">
+      <div id="brand-mini">
+        <svg width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="128" cy="128" r="90" stroke="#00ff66" stroke-width="8" stroke-dasharray="14 10" />
+          <path d="M 86 100 L 102 162 L 128 122 L 154 162 L 170 100" stroke="#00ff66" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>WORLDCRAFT</span>
+      </div>
+
+      <nav id="tabs-list" aria-label="Browser-Tabs">
+        <!-- Rendered dynamically by renderer.js -->
+        <button id="btn-new-tab" data-i18n-title="tab_new" title="Neuen Tab öffnen (Strg+T)" aria-label="Neuen Tab öffnen">+</button>
+      </nav>
+    </header>
+
+    <!-- 2. NAVIGATION & CYBER ADDRESS BAR -->
+    <div id="nav-bar">
+      <button id="btn-nav-back" class="nav-btn" data-i18n-title="nav_back" title="Zurück" aria-label="Zurück" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+
+      <button id="btn-nav-forward" class="nav-btn" data-i18n-title="nav_forward" title="Vorwärts" aria-label="Vorwärts" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+
+      <button id="btn-nav-reload" class="nav-btn" data-i18n-title="nav_reload" title="Neu laden" aria-label="Neu laden">
+        <svg id="icon-nav-reload" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+
+      <div id="url-bar-container">
+        <span id="url-protocol-badge" title="Verbindungsstatus">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <input type="text" id="url-input" data-i18n-placeholder="url_placeholder" placeholder="Adresse eingeben oder im Matrix-Netz suchen..." autocomplete="off" spellcheck="false" aria-label="Adress- und Suchleiste">
+        <button id="btn-url-go" data-i18n-title="url_go" title="Navigieren" aria-label="Navigieren">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <button id="btn-nav-detach" class="nav-btn" data-i18n-title="nav_detach" title="In eigenständiges Web-App-Fenster auskoppeln" aria-label="Web-App auskoppeln">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </button>
+
+      <button id="btn-nav-downloads" class="nav-btn download-nav-container" data-i18n-title="nav_downloads" title="Downloads // Matrix Data Stream" aria-label="Downloads">
+        <svg class="download-progress-ring" viewBox="0 0 36 36">
+          <circle class="ring-bg" cx="18" cy="18" r="14" fill="none" stroke-width="2.5"/>
+          <circle id="download-ring-progress" class="ring-fill" cx="18" cy="18" r="14" fill="none" stroke-width="2.5"/>
+        </svg>
+        <svg class="download-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13M18 11l-6 6-6-6M4 20h16"/></svg>
+        <span id="download-badge">0</span>
+      </button>
+
+      <button id="btn-nav-feedback" class="nav-btn" data-i18n-title="nav_feedback" title="Feedback & Bug Report" aria-label="Feedback & Bug Report">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="8" height="14" x="8" y="6" rx="4"/>
+          <path d="m19 7-3 2"/>
+          <path d="m5 7 3 2"/>
+          <path d="m19 19-3-2"/>
+          <path d="m5 19 3-2"/>
+          <path d="M20 13h-4"/>
+          <path d="M4 13h4"/>
+          <path d="m10 4 1 2"/>
+          <path d="m14 4-1 2"/>
+        </svg>
+      </button>
+
+      <button id="btn-nav-ai" class="nav-btn" data-i18n-title="nav_ai" title="Worldcraft AI öffnen" aria-label="Worldcraft AI öffnen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><path d="M9 15h6"/></svg>
+      </button>
+
+      <button id="btn-nav-settings" class="nav-btn" data-i18n-title="nav_settings" title="Einstellungen" aria-label="Einstellungen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
+    <!-- UPDATE HUD -->
+    <div id="update-hud" role="alert" aria-live="assertive">
+      <div class="update-hud-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span id="update-hud-text">UPDATE VERFÜGBAR</span>
+      </div>
+      <div id="update-hud-progress" class="update-hud-progress-bar" style="display:none;">
+        <div id="update-hud-progress-fill" class="update-hud-progress-fill"></div>
+      </div>
+      <div class="update-hud-buttons">
+        <button id="btn-update-restart" class="btn-primary" style="display:none; padding:4px 10px; font-size:11px;">JETZT NEUSTARTEN</button>
+        <button id="btn-update-dismiss" class="btn-secondary" style="padding:4px 10px; font-size:11px;">SPÄTER</button>
+      </div>
+    </div>
+
+    <!-- 2.5 CYBERPUNK PAGE TRANSLATE BANNER -->
+    <div id="translate-banner" class="translate-banner hidden" role="region" aria-label="Webseiten-Übersetzer">
+      <div class="translate-banner-left">
+        <div class="translate-banner-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <span class="translate-banner-tag" data-i18n="translate_banner_prefix">[ ÜBERSETZEN ]</span>
+        <span id="translate-banner-text" class="translate-banner-text">Diese Seite ist auf Englisch. In deine Sprache übersetzen?</span>
+      </div>
+      <div class="translate-banner-actions">
+        <button id="btn-translate-confirm" class="btn-translate-action btn-translate-yes" data-i18n="translate_btn_yes">[ ÜBERSETZEN ]</button>
+        <button id="btn-translate-original" class="btn-translate-action btn-translate-revert hidden" data-i18n="translate_btn_original">[ ORIGINAL ]</button>
+        <button id="btn-translate-dismiss" class="btn-translate-action btn-translate-no" data-i18n="translate_btn_no">[ IGNORIEREN ]</button>
+        <button id="btn-translate-close" class="translate-banner-close" title="Banner schließen">✕</button>
+      </div>
+    </div>
+
+    <!-- DOWNLOADS DROPDOWN PANEL -->
+    <div id="downloads-dropdown">
+      <div class="downloads-dropdown-header">
+        <span class="downloads-dropdown-title" data-i18n="downloads_title">DOWNLOADS // MATRIX DATA STREAM</span>
+        <button id="btn-clear-downloads" class="ai-chip-btn" data-i18n="downloads_clear" title="Historie leeren">Leeren</button>
+      </div>
+      <div id="downloads-list-items">
+        <div class="datastream-empty-state">
+          <img src="assets/datastream-globe.jpg" class="datastream-globe-img" alt="Wireframe Globe">
+          <div class="datastream-idle-text" data-i18n="downloads_empty">[ DATASTREAM IDLE ]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. MAIN WORKSPACE -->
+    <main id="workspace">
+      <!-- Left Sidebar -->
+      <aside id="sidebar" aria-label="Hauptnavigation">
+        <button id="side-btn-home" class="sidebar-btn active" data-i18n-title="sidebar_home" title="Homescreen" aria-label="Homescreen">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </button>
+
+        <button id="side-btn-favorites" class="sidebar-btn" data-i18n-title="sidebar_favorites" title="Favoriten / Lesezeichen" aria-label="Favoriten">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+
+        <button id="side-btn-radio" class="sidebar-btn" data-i18n-title="sidebar_radio" title="WorldCraft Radio" aria-label="WorldCraft Radio">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+        </button>
+
+        <button id="side-btn-downloads" class="sidebar-btn" data-i18n-title="sidebar_downloads" title="Download-Verlauf // Data Stream" aria-label="Download-Verlauf">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+        </button>
+
+        <button id="side-btn-forge" class="sidebar-btn" data-i18n-title="sidebar_forge" title="Worldcraft Builder AI // OBS Forge" aria-label="OBS Forge">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </button>
+
+        <div class="sidebar-spacer"></div>
+
+        <button id="side-btn-settings" class="sidebar-btn" data-i18n-title="sidebar_settings" title="Einstellungen" aria-label="Einstellungen">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+
+        <button id="side-btn-feedback" class="sidebar-btn" data-i18n-title="nav_feedback" title="Feedback & Bug Report" aria-label="Feedback & Bug Report">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="8" height="14" x="8" y="6" rx="4"/>
+            <path d="m19 7-3 2"/>
+            <path d="m5 7 3 2"/>
+            <path d="m19 19-3-2"/>
+            <path d="m5 19 3-2"/>
+            <path d="M20 13h-4"/>
+            <path d="M4 13h4"/>
+            <path d="m10 4 1 2"/>
+            <path d="m14 4-1 2"/>
+          </svg>
+        </button>
+
+        <button id="side-btn-ai" class="sidebar-btn" data-i18n-title="sidebar_ai" title="Worldcraft AI" aria-label="Worldcraft AI">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+        </button>
+      </aside>
+
+      <!-- Center Browser Viewport / Homescreen -->
+      <section id="viewport-container">
+        <!-- Cyberpunk Homescreen (Visible when active tab is on home) -->
+        <div id="homescreen">
+          <div class="homescreen-content">
+            <div class="home-brand">
+              <img src="assets/worldcraft-logo.svg" alt="Worldcraft Browser Logo" class="home-logo">
+              <div class="home-clock-container">
+                <span id="home-clock">00:00:00</span>
+                <span id="home-date">--.--.----</span>
+              </div>
+            </div>
+
+            <div class="home-search-wrapper">
+              <form id="home-search-form" class="home-search-box">
+                <div class="search-provider-icon" title="Google Matrix Suche">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+                  </svg>
+                </div>
+                <input type="text" id="home-search-input" data-i18n-placeholder="home_search_placeholder" placeholder="Google Suche oder Matrix-URL eingeben..." autocomplete="off">
+                <button type="submit" id="btn-home-search" data-i18n="home_search_btn">SUCHEN</button>
+              </form>
+            </div>
+
+            <!-- Speed Dial Tiles -->
+            <div class="speed-dial-section">
+              <div class="speed-dial-header">
+                <span class="speed-dial-title" data-i18n="home_speed_dial_title">SPEED DIAL // SCHNELLZUGRIFF</span>
+                <button id="btn-add-speed-dial" class="ai-chip-btn" data-i18n="home_add_bookmark">+ Favorit</button>
+              </div>
+              <div id="speed-dial-grid" class="speed-dial-grid">
+                <!-- Dynamically generated speed dial tiles -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OBS FORGE HUD (Visible when active tab is worldcraft://dev-forge) -->
+        <div id="forge-hud" class="hidden">
+          <div class="forge-container">
+            <div class="forge-header">
+              <div class="forge-title-group">
+                <div class="forge-badge">OBS STUDIO COMPATIBLE</div>
+                <h1 class="forge-title" data-i18n="forge_title">WORLDCRAFT FORGE // OBS OVERLAY SYNTHESIZER</h1>
+                <p class="forge-subtitle" data-i18n="forge_subtitle">Generate transparent, reactive HTML/CSS/JS overlays powered by Neural-Link.</p>
+              </div>
+              <div class="forge-server-status">
+                <span class="status-pulse-dot"></span>
+                <span>OBS SERVER // LOCALHOST:4884</span>
+              </div>
+            </div>
+
+            <div class="forge-presets-bar">
+              <span class="forge-presets-label">PRESETS:</span>
+              <button class="forge-chip" data-prompt="Futuristic Cyberpunk Stream-Alert for new subscribers with neon particle explosion, sound synthesis, and glitch text '[ USER RECOGNIZED // NEURAL LINK ONLINE ]'" data-name="alert-sub" data-type="alert">[ STREAM ALERT ]</button>
+              <button class="forge-chip" data-prompt="3D rotating holographic QR-Code cube with neon green glowing borders, floating telemetry data and scanner reticle" data-name="qr-stream" data-type="widget">[ ROTATING QR ]</button>
+              <button class="forge-chip" data-prompt="Animated cyberpunk glitch ticker banner with scanlines, digital noise, and custom live stream ticker text" data-name="glitch-banner" data-type="banner">[ GLITCH BANNER ]</button>
+              <button class="forge-chip" data-prompt="Circular neon green reactive audio visualizer with pulsing frequency bars and futuristic cyber compass hud" data-name="audio-viz" data-type="visualizer">[ AUDIO VISUALIZER ]</button>
+              <button class="forge-chip" data-prompt="Stream donation goal bar with animated matrix code rain fill, percentage counter and glowing milestones" data-name="goal-bar" data-type="goal">[ GOAL COUNTER ]</button>
+            </div>
+
+            <div class="forge-main-grid">
+              <!-- Left: Controls & Prompts -->
+              <div class="forge-panel forge-controls-panel">
+                <div class="forge-form-group">
+                  <label class="form-label" for="forge-widget-name">WIDGET IDENTIFIER // NAME:</label>
+                  <input type="text" id="forge-widget-name" class="cyber-input" data-i18n-placeholder="forge_widget_name" placeholder="z. B. alert-stream, cyber-qr, glitch-banner">
+                </div>
+
+                <div class="forge-form-group">
+                  <label class="form-label" for="forge-prompt-input">OVERLAY SYNTHESIS PROMPT:</label>
+                  <textarea id="forge-prompt-input" class="cyber-textarea" rows="4" data-i18n-placeholder="forge_prompt_placeholder" placeholder="Beschreibe dein OBS-Overlay (z. B. Stream-Alert mit Partikeln, Glitch-Banner, rotierender QR-Code mit transparentem Hintergrund)..."></textarea>
+                </div>
+
+                <button id="btn-forge-synthesize" class="btn-forge-action">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span data-i18n="forge_btn_synthesize">[ SYNTHESIZE OBS WIDGET // COMPILE ]</span>
+                </button>
+
+                <div id="forge-terminal-log" class="forge-terminal-log hidden">
+                  <div class="terminal-line"><span class="term-prefix">[NEURAL-LINK]</span> Connecting to AI Model...</div>
+                  <div class="terminal-line"><span class="term-prefix">[FORGE]</span> Enforcing transparent OBS Shader rules...</div>
+                  <div class="terminal-line"><span class="term-prefix">[FORGE]</span> Compiling single-file HTML/CSS/JS...</div>
+                  <div class="terminal-line"><span class="term-prefix">[HOST]</span> Deploying to localhost:4884/widgets/...</div>
+                </div>
+
+                <div class="forge-library-section">
+                  <div class="forge-library-header">
+                    <span class="forge-library-title">GESPEICHERTE WIDGETS // LIBRARY</span>
+                    <button id="btn-refresh-widgets" class="ai-chip-btn">Aktualisieren</button>
+                  </div>
+                  <div id="forge-widgets-list" class="forge-widgets-list">
+                    <!-- Loaded dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Live Preview & OBS URL -->
+              <div class="forge-panel forge-preview-panel">
+                <div class="forge-output-box">
+                  <div class="forge-output-header">
+                    <span class="forge-output-label" data-i18n="forge_obs_link">OBS BROWSER SOURCE URL:</span>
+                    <span id="forge-widget-status-badge" class="badge-status">BEREIT</span>
+                  </div>
+                  <div class="forge-url-row">
+                    <input type="text" id="forge-output-url" class="cyber-input" readonly value="http://localhost:4884/widgets/demo.html">
+                    <button id="btn-copy-obs-url" class="btn-copy-obs" title="In Zwischenablage kopieren">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      <span data-i18n="forge_btn_copy">[ COPY OBS BROWSER SOURCE ]</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="forge-preview-container">
+                  <div class="forge-preview-topbar">
+                    <span class="preview-title">INTERACTIVE PREVIEW // TRANSPARENT CHECKERBOARD</span>
+                    <div class="preview-actions" style="display:flex; gap:6px;">
+                      <button id="btn-reload-preview" class="ai-chip-btn">Neu laden</button>
+                      <button id="btn-open-preview-tab" class="ai-chip-btn">Im Tab öffnen</button>
+                    </div>
+                  </div>
+                  <div class="forge-iframe-wrapper">
+                    <iframe id="forge-preview-frame" src="about:blank" allow="autoplay; microphone; camera" sandbox="allow-scripts allow-same-origin"></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2.7 INTERNAL TAB: CYBERPUNK SETTINGS (worldcraft://settings) -->
+        <div id="settings-hud" class="hidden">
+          <div class="settings-standalone-container chrome-settings-wrapper">
+            <div class="settings-standalone-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="assets/worldcraft-icon.svg" width="28" height="28" alt="Worldcraft Icon">
+                <h1 class="modal-title" style="margin: 0; font-size: 16px;">WORLDCRAFT BROWSER // CYBERPUNK SETTINGS</h1>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge-status">NEURAL-LINK CORE</span>
+                <span class="badge-status" style="border-color: var(--neon-green); color: var(--neon-green);">INTERNAL TAB</span>
+              </div>
+            </div>
+
+            <div class="chrome-settings-layout">
+              <!-- Left: Chrome-style Cyberpunk Sidebar (250px) -->
+              <nav class="chrome-settings-sidebar">
+                <div class="sidebar-category-header" data-i18n="settings_sidebar_categories">KATEGORIEN</div>
+                <button type="button" class="settings-nav-item active" id="hud-nav-item-appearance" data-target="hud-section-appearance">
+                  <span class="nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.2 0-.9.8-1.7 1.7-1.7h2c4 0 7.4-3.4 7.4-7.4C24 6.4 18.6 2 12 2z"/></svg>
+                  </span>
+                  <span class="nav-label" data-i18n="settings_cat_appearance">Darstellung &amp; Design</span>
+                </button>
+                <button type="button" class="settings-nav-item" id="hud-nav-item-search" data-target="hud-section-search">
+                  <span class="nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </span>
+                  <span class="nav-label" data-i18n="settings_cat_search">Suchmaschine</span>
+                </button>
+                <button type="button" class="settings-nav-item" id="hud-nav-item-ai" data-target="hud-section-ai">
+                  <span class="nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                  </span>
+                  <span class="nav-label" data-i18n="settings_cat_ai">Worldcraft AI (Neural Link)</span>
+                </button>
+                <button type="button" class="settings-nav-item" id="hud-nav-item-languages" data-target="hud-section-languages">
+                  <span class="nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </span>
+                  <span class="nav-label" data-i18n="settings_cat_languages">Sprachen</span>
+                </button>
+                <button type="button" class="settings-nav-item" id="hud-nav-item-tabs" data-target="hud-section-tabs">
+                  <span class="nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  </span>
+                  <span class="nav-label" data-i18n="settings_cat_tabs">Schnellzugriff &amp; Tabs</span>
+                </button>
+                <button type="button" class="settings-nav-item" id="hud-nav-item-about" data-target="hud-section-about">
+                  <span class="nav-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </span>
+                  <span class="nav-label" data-i18n="settings_cat_about">Über Worldcraft &amp; Feedback</span>
+                </button>
+              </nav>
+
+              <!-- Right: Scrollable Content Container -->
+              <div class="chrome-settings-content" id="hud-settings-content-scroll">
+                <!-- SECTION 1: DARSTELLUNG & DESIGN -->
+                <section id="hud-section-appearance" class="cyber-settings-section">
+                  <div class="cyber-section-header">
+                    <div class="cyber-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.2 0-.9.8-1.7 1.7-1.7h2c4 0 7.4-3.4 7.4-7.4C24 6.4 18.6 2 12 2z"/></svg>
+                      <span data-i18n="settings_cat_appearance">DARSTELLUNG &amp; DESIGN</span>
+                    </div>
+                    <span class="cyber-section-badge">UI / HOMESCREEN</span>
+                  </div>
+
+                  <!-- Homescreen Background Customization -->
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings_bg_title">Homescreen-Hintergrund</span>
+                    <p style="font-size:11px; color:var(--text-muted); margin:0;" data-i18n="settings_bg_desc">Passe das visuelle Erscheinungsbild deiner Cyberpunk-Startseite an.</p>
+
+                    <div class="bg-mode-selector">
+                      <label class="bg-mode-option active">
+                        <input type="radio" name="hudCustomBgMode" value="default" checked>
+                        <span class="bg-mode-label" data-i18n="settings_bg_mode_default">Cyberpunk Tech-Grid (Standard)</span>
+                      </label>
+                      <label class="bg-mode-option">
+                        <input type="radio" name="hudCustomBgMode" value="url">
+                        <span class="bg-mode-label" data-i18n="settings_bg_mode_url">Eigene Bild-URL</span>
+                      </label>
+                      <label class="bg-mode-option">
+                        <input type="radio" name="hudCustomBgMode" value="local">
+                        <span class="bg-mode-label" data-i18n="settings_bg_mode_local">Lokales Bild hochladen</span>
+                      </label>
+                    </div>
+
+                    <!-- URL Input Subpanel -->
+                    <div id="hud-bg-url-panel" class="bg-subpanel hidden">
+                      <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="hud-setting-bg-url" class="cyber-input" data-i18n-placeholder="settings_bg_url_placeholder" placeholder="https://example.com/wallpaper.jpg" style="flex:1;">
+                        <button type="button" id="hud-btn-apply-bg-url" class="btn-primary" data-i18n="settings_bg_apply_url" style="white-space:nowrap; padding:6px 14px; font-size:11px;">[ VORSCHAU &amp; ÜBERNEHMEN ]</button>
+                      </div>
+                    </div>
+
+                    <!-- Local File Subpanel -->
+                    <div id="hud-bg-local-panel" class="bg-subpanel hidden">
+                      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <input type="file" id="hud-setting-bg-file" accept="image/*" style="display:none">
+                        <button type="button" id="hud-btn-choose-bg-file" class="btn-primary" data-i18n="settings_bg_upload_btn" style="padding:6px 14px; font-size:11px;">[ DATEI AUSWÄHLEN ]</button>
+                        <span id="hud-bg-file-name" style="font-size:11px; color:var(--text-secondary); font-family:var(--font-mono);">Keine Datei gewählt</span>
+                      </div>
+                    </div>
+
+                    <!-- Reset Button -->
+                    <div>
+                      <button type="button" id="hud-btn-reset-bg" class="btn-secondary" data-i18n="settings_bg_reset" style="font-size:10px; padding:4px 10px;">
+                        [ AUF STANDARD-CYBERPUNK-HINTERGRUND ZURÜCKSETZEN ]
+                      </button>
+                    </div>
+
+                    <!-- Live Preview Box -->
+                    <div class="bg-preview-wrapper">
+                      <div class="bg-preview-header">
+                        <span class="bg-preview-title" data-i18n="settings_bg_preview_title">LIVE-VORSCHAU // HINTERGRUND</span>
+                        <span id="hud-bg-preview-mode-tag" class="cyber-section-badge">DEFAULT</span>
+                      </div>
+                      <div id="hud-bg-preview-box" class="bg-preview-box">
+                        <div class="bg-preview-scanlines"></div>
+                        <div class="bg-preview-mockup">
+                          <div class="mockup-logo">WORLDCRAFT</div>
+                          <div class="mockup-bar"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Dedicated Immediate Apply Button for New Tab & Homescreen -->
+                    <button type="button" id="hud-btn-apply-homescreen-bg" class="btn-primary" data-i18n="settings_bg_apply_immediate" style="width:100%; padding:9px 16px; font-size:11px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>[ HINTERGRUND SOFORT FÜR NEW-TAB &amp; HOMESCREEN AKTIVIEREN ]</span>
+                    </button>
+                  </div>
+
+                  <!-- Appearance Toggles -->
+                  <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                    <label class="cyber-toggle-item" for="setting-matrix-rain">
+                      <div class="cyber-toggle-text">
+                        <span class="cyber-toggle-title" data-i18n="settings_matrix_rain">Matrix-Hintergrundanimation</span>
+                        <span class="cyber-toggle-desc" data-i18n="settings_matrix_rain_desc">Animierter digitaler Code-Regen auf dem Homescreen</span>
+                      </div>
+                      <div class="cyber-switch">
+                        <input type="checkbox" id="setting-matrix-rain" checked>
+                        <span class="cyber-slider"></span>
+                      </div>
+                    </label>
+
+                    <label class="cyber-toggle-item" for="setting-force-dark">
+                      <div class="cyber-toggle-text">
+                        <span class="cyber-toggle-title" data-i18n="settings_dark_mode">Force Dark Mode</span>
+                        <span class="cyber-toggle-desc" data-i18n="settings_dark_mode_desc">Erzwingt High-Tech Dark Mode für externe Webseiten</span>
+                      </div>
+                      <div class="cyber-switch">
+                        <input type="checkbox" id="setting-force-dark" checked>
+                        <span class="cyber-slider"></span>
+                      </div>
+                    </label>
+                  </div>
+                </section>
+
+                <!-- SECTION 2: SUCHMASCHINE -->
+                <section id="hud-section-search" class="cyber-settings-section">
+                  <div class="cyber-section-header">
+                    <div class="cyber-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <span data-i18n="settings_cat_search">SUCHMASCHINEN-ROUTING</span>
+                    </div>
+                    <span class="cyber-section-badge">OMNIBOX UPLINK</span>
+                  </div>
+
+                  <div class="search-select-container">
+                    <label class="form-label" for="hud-setting-search-select" data-i18n="settings_search_select_label">Standardsuchmaschine auswählen:</label>
+                    <select id="hud-setting-search-select" class="cyber-select">
+                      <option value="google">Google Matrix (https://www.google.com)</option>
+                      <option value="duckduckgo">DuckDuckGo Privacy (https://duckduckgo.com)</option>
+                      <option value="brave">Brave Search (https://search.brave.com)</option>
+                      <option value="bing">Microsoft Bing (https://www.bing.com)</option>
+                    </select>
+                  </div>
+
+                  <div class="search-card-grid">
+                    <div class="search-engine-card active" data-engine="google">
+                      <div class="search-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/google.com" alt="Google Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/google.svg';">
+                      </div>
+                      <div class="search-card-info">
+                        <span class="search-card-name">Google Matrix</span>
+                        <span class="search-card-desc">Globales Standard-Webnetz</span>
+                      </div>
+                      <div class="search-card-radio"></div>
+                    </div>
+
+                    <div class="search-engine-card" data-engine="duckduckgo">
+                      <div class="search-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/duckduckgo.com" alt="DuckDuckGo Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/duckduckgo.svg';">
+                      </div>
+                      <div class="search-card-info">
+                        <span class="search-card-name">DuckDuckGo</span>
+                        <span class="search-card-desc">Privatsphäre &amp; No-Tracking</span>
+                      </div>
+                      <div class="search-card-radio"></div>
+                    </div>
+
+                    <div class="search-engine-card" data-engine="brave">
+                      <div class="search-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/brave.com" alt="Brave Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/brave.svg';">
+                      </div>
+                      <div class="search-card-info">
+                        <span class="search-card-name">Brave Search</span>
+                        <span class="search-card-desc">Unabhängiger Cyber-Index</span>
+                      </div>
+                      <div class="search-card-radio"></div>
+                    </div>
+
+                    <div class="search-engine-card" data-engine="bing">
+                      <div class="search-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/bing.com" alt="Microsoft Bing Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/bing.svg';">
+                      </div>
+                      <div class="search-card-info">
+                        <span class="search-card-name">Microsoft Bing</span>
+                        <span class="search-card-desc">Cognitive Web-Search</span>
+                      </div>
+                      <div class="search-card-radio"></div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 3: WORLDCRAFT AI (NEURAL LINK) -->
+                <section id="hud-section-ai" class="cyber-settings-section">
+                  <div class="cyber-section-header">
+                    <div class="cyber-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                      <span data-i18n="settings_cat_ai">WORLDCRAFT AI (NEURAL LINK)</span>
+                    </div>
+                    <span class="cyber-section-badge">MULTI-PROVIDER BYOK</span>
+                  </div>
+
+                  <!-- Live Status Indicator -->
+                  <div class="ai-status-row">
+                    <span class="form-label" data-i18n="settings_ai_status_label">Neural-Link Status:</span>
+                    <div id="hud-ai-status-indicator" class="ai-status-indicator not-configured">
+                      <span class="ai-pulse-dot"></span>
+                      <span id="hud-ai-status-badge-text" data-i18n="settings_ai_status_inactive">NICHT KONFIGURIERT // STANDBY</span>
+                    </div>
+                  </div>
+
+                  <!-- Provider Cards Grid -->
+                  <div class="multi-provider-grid">
+                    <div class="provider-card active" data-provider="google">
+                      <div class="provider-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/gemini.google.com" alt="Google Gemini Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='https://www.gstatic.com/images/branding/product/2x/gemini_32dp.png'; this.onerror=function(){this.src='assets/brands/gemini.svg';};">
+                      </div>
+                      <div class="provider-card-info">
+                        <span class="provider-card-name">Google (Gemini)</span>
+                        <span class="provider-card-desc">gemini-3.8-flash // 2.5-pro</span>
+                      </div>
+                      <div class="provider-card-radio"></div>
+                    </div>
+
+                    <div class="provider-card" data-provider="openai">
+                      <div class="provider-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/openai.com" alt="OpenAI Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/openai.svg';">
+                      </div>
+                      <div class="provider-card-info">
+                        <span class="provider-card-name">OpenAI (ChatGPT)</span>
+                        <span class="provider-card-desc">gpt-4o // gpt-4o-mini</span>
+                      </div>
+                      <div class="provider-card-radio"></div>
+                    </div>
+
+                    <div class="provider-card" data-provider="anthropic">
+                      <div class="provider-card-icon brand-logo-icon">
+                        <img src="https://logo.clearbit.com/anthropic.com" alt="Anthropic Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/anthropic.svg';">
+                      </div>
+                      <div class="provider-card-info">
+                        <span class="provider-card-name">Anthropic (Claude)</span>
+                        <span class="provider-card-desc">claude-3-5-sonnet // haiku</span>
+                      </div>
+                      <div class="provider-card-radio"></div>
+                    </div>
+
+                    <div class="provider-card" data-provider="ollama">
+                      <div class="provider-card-icon brand-logo-icon">
+                        <img src="assets/brands/ollama.svg" alt="Local Server / Ollama" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/worldcraft-icon.svg';">
+                      </div>
+                      <div class="provider-card-info">
+                        <span class="provider-card-name">Local (Ollama)</span>
+                        <span class="provider-card-desc">localhost:11434 // open weights</span>
+                      </div>
+                      <div class="provider-card-radio"></div>
+                    </div>
+                  </div>
+
+                  <!-- Masked Key Input with Eye Toggle & Action Buttons -->
+                  <div class="neural-key-container">
+                    <label class="form-label" id="neural-key-label" for="setting-neural-key">NEURAL-LINK KEY // API (GOOGLE GEMINI):</label>
+                    <div class="password-input-wrapper">
+                      <input type="password" id="setting-neural-key" class="cyber-input" data-i18n-placeholder="settings_ai_key_placeholder" placeholder="API-Key hier einfügen...">
+                      <button type="button" id="hud-btn-toggle-key-visibility" class="btn-eye-toggle" title="Passwort anzeigen/verbergen" aria-label="Toggle password visibility">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                    </div>
+
+                    <a id="neural-key-help-link" class="get-api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      <span>[ GET FREE API KEY ]</span>
+                    </a>
+
+                    <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap:wrap;">
+                      <button type="button" id="btn-save-neural-key" class="btn-primary" data-i18n="settings_btn_save_key" style="padding: 4px 12px; font-size: 11px;">[ SCHLÜSSEL SPEICHERN ]</button>
+                      <button type="button" id="btn-clear-neural-key" class="btn-secondary" data-i18n="settings_btn_clear_key" style="padding: 4px 12px; font-size: 11px;">[ LÖSCHEN ]</button>
+                      <button type="button" id="hud-btn-test-neural-key" class="btn-secondary" data-i18n="settings_ai_btn_test" style="padding: 4px 12px; font-size: 11px; border-color: var(--neon-cyan); color: var(--neon-cyan);">[ KEY TESTEN ]</button>
+                    </div>
+
+                    <div id="hud-key-test-feedback" class="key-test-feedback hidden"></div>
+
+                    <span style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                      Kein fester Standard-Key im Quellcode (0 € Entwicklerkosten). Schlüssel werden kryptografisch via SafeStorage (DPAPI) im Profil isoliert.
+                    </span>
+                  </div>
+
+                  <!-- Active Model Tier Selector -->
+                  <div style="margin-top: 8px;">
+                    <label class="form-label" style="margin-bottom: 6px; display: block;">Ausgewählte Modell-Stufe:</label>
+                    <div class="neural-model-grid">
+                      <div class="neural-model-card active" data-model-tier="fast">
+                        <div class="neural-model-header">
+                          <span class="neural-model-name">CORE FAST</span>
+                          <span class="neural-badge">AKTIV</span>
+                        </div>
+                        <span class="neural-model-id" id="neural-model-id-fast">gemini-3.8-flash</span>
+                        <span class="neural-model-desc">Niedrige Latenz, Echtzeit-Recherche und reaktionsschnelle UI-Synthese.</span>
+                      </div>
+
+                      <div class="neural-model-card" data-model-tier="pro">
+                        <div class="neural-model-header">
+                          <span class="neural-model-name">CORE PRO</span>
+                          <span class="neural-badge">VERFÜGBAR</span>
+                        </div>
+                        <span class="neural-model-id" id="neural-model-id-pro">gemini-2.5-pro</span>
+                        <span class="neural-model-desc">Höchste kognitive Tiefe, komplexe System-Synthese und Deep Coding.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- AI Toggle Switch -->
+                  <div style="margin-top: 8px;">
+                    <label class="cyber-toggle-item" for="setting-ai-startup">
+                      <div class="cyber-toggle-text">
+                        <span class="cyber-toggle-title">KI-Seitenpanel beim Start</span>
+                        <span class="cyber-toggle-desc">Öffnet Worldcraft AI automatisch bei jedem Browserstart</span>
+                      </div>
+                      <div class="cyber-switch">
+                        <input type="checkbox" id="setting-ai-startup">
+                        <span class="cyber-slider"></span>
+                      </div>
+                    </label>
+                  </div>
+                </section>
+
+                <!-- SECTION 4: SPRACHEN -->
+                <section id="hud-section-languages" class="cyber-settings-section">
+                  <div class="cyber-section-header">
+                    <div class="cyber-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                      <span data-i18n="settings_section_lang">SPRACHE &amp; LOKALISIERUNG</span>
+                    </div>
+                    <span class="cyber-section-badge">7 REGIONS</span>
+                  </div>
+
+                  <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 4px 0;" data-i18n="settings_lang_desc">Wähle die Anzeigesprache für die Benutzeroberfläche und die automatische Webseitenübersetzung.</p>
+
+                  <div id="modal-language-flags-grid" class="language-flags-grid">
+                    <div class="lang-flag-tile active" data-lang="de" title="Deutsch (DE)">
+                      <img src="assets/flags/de.svg" class="flag-icon-svg" alt="Deutsch">
+                      <div class="flag-info">
+                        <span class="flag-name">Deutsch</span>
+                        <span class="flag-code">DE</span>
+                      </div>
+                    </div>
+                    <div class="lang-flag-tile" data-lang="en" title="English (US/UK)">
+                      <img src="assets/flags/en.svg" class="flag-icon-svg" alt="English">
+                      <div class="flag-info">
+                        <span class="flag-name">English</span>
+                        <span class="flag-code">US / UK</span>
+                      </div>
+                    </div>
+                    <div class="lang-flag-tile" data-lang="es" title="Español (ES)">
+                      <img src="assets/flags/es.svg" class="flag-icon-svg" alt="Español">
+                      <div class="flag-info">
+                        <span class="flag-name">Español</span>
+                        <span class="flag-code">ES</span>
+                      </div>
+                    </div>
+                    <div class="lang-flag-tile" data-lang="fr" title="Français (FR)">
+                      <img src="assets/flags/fr.svg" class="flag-icon-svg" alt="Français">
+                      <div class="flag-info">
+                        <span class="flag-name">Français</span>
+                        <span class="flag-code">FR</span>
+                      </div>
+                    </div>
+                    <div class="lang-flag-tile" data-lang="it" title="Italiano (IT)">
+                      <img src="assets/flags/it.svg" class="flag-icon-svg" alt="Italiano">
+                      <div class="flag-info">
+                        <span class="flag-name">Italiano</span>
+                        <span class="flag-code">IT</span>
+                      </div>
+                    </div>
+                    <div class="lang-flag-tile" data-lang="pl" title="Polski (PL)">
+                      <img src="assets/flags/pl.svg" class="flag-icon-svg" alt="Polski">
+                      <div class="flag-info">
+                        <span class="flag-name">Polski</span>
+                        <span class="flag-code">PL</span>
+                      </div>
+                    </div>
+                    <div class="lang-flag-tile" data-lang="uk" title="Українська (UK)">
+                      <img src="assets/flags/uk.svg" class="flag-icon-svg" alt="Українська">
+                      <div class="flag-info">
+                        <span class="flag-name">Українська</span>
+                        <span class="flag-code">UK</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- SECTION 5: SCHNELLZUGRIFF & TABS -->
+                <section id="hud-section-tabs" class="cyber-settings-section">
+                  <div class="cyber-section-header">
+                    <div class="cyber-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      <span data-i18n="settings_cat_tabs">SCHNELLZUGRIFF &amp; TABS</span>
+                    </div>
+                    <span class="cyber-section-badge">SPEED &amp; MEDIA</span>
+                  </div>
+
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label class="cyber-toggle-item" for="setting-background-radio">
+                      <div class="cyber-toggle-text">
+                        <span class="cyber-toggle-title" data-i18n="settings_radio_bg">Hintergrundradio</span>
+                        <span class="cyber-toggle-desc" data-i18n="settings_radio_bg_desc">Musik läuft beim Navigieren und Tab-Wechseln unterbrechungsfrei weiter</span>
+                      </div>
+                      <div class="cyber-switch">
+                        <input type="checkbox" id="setting-background-radio" checked>
+                        <span class="cyber-slider"></span>
+                      </div>
+                    </label>
+
+                    <label class="cyber-toggle-item" for="setting-animated-downloads">
+                      <div class="cyber-toggle-text">
+                        <span class="cyber-toggle-title" data-i18n="settings_animated_downloads">Animierte Downloadvisualisierung</span>
+                        <span class="cyber-toggle-desc" data-i18n="settings_animated_downloads_desc">Horizontale Matrix-Datenstromanzeige im Download-Manager</span>
+                      </div>
+                      <div class="cyber-switch">
+                        <input type="checkbox" id="setting-animated-downloads" checked>
+                        <span class="cyber-slider"></span>
+                      </div>
+                    </label>
+
+                    <label class="cyber-toggle-item" for="setting-notify-updates">
+                      <div class="cyber-toggle-text">
+                        <span class="cyber-toggle-title" data-i18n="settings_notify_updates">Updatebenachrichtigungen</span>
+                        <span class="cyber-toggle-desc" data-i18n="settings_notify_updates_desc">Automatische HUD-Meldung bei neuen Versionen</span>
+                      </div>
+                      <div class="cyber-switch">
+                        <input type="checkbox" id="setting-notify-updates" checked>
+                        <span class="cyber-slider"></span>
+                      </div>
+                    </label>
+                  </div>
+                </section>
+
+                <!-- SECTION 6: ÜBER WORLDCRAFT & FEEDBACK -->
+                <section id="hud-section-about" class="cyber-settings-section">
+                  <div class="cyber-section-header">
+                    <div class="cyber-section-title">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span data-i18n="settings_cat_about">ÜBER WORLDCRAFT &amp; FEEDBACK</span>
+                    </div>
+                    <span class="cyber-section-badge">RELEASE V1.2.0</span>
+                  </div>
+
+                  <!-- Auto-Updater & Version Badge (Smoke test invariants) -->
+                  <div class="version-updater-container">
+                    <div class="version-badge-row">
+                      <div id="cyber-version-badge" class="cyber-version-badge">
+                        [ WORLDCRAFT CORE // V<span id="version-display-val">1.2.0</span> // PROTOCOL STABLE ]
+                      </div>
+                      <button type="button" id="btn-check-updates" class="btn-check-updates">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        <span data-i18n="settings_check_updates">[ CHECK FOR UPDATES ]</span>
+                      </button>
+                    </div>
+
+                    <div id="updater-terminal-box" class="updater-terminal-box hidden">
+                      <div class="updater-terminal-line">
+                        <span class="term-prompt">&gt;</span>
+                        <span id="updater-status-text">PINGING UPDATE SERVERS...</span>
+                      </div>
+
+                      <div id="updater-matrix-progress-wrap" class="matrix-materialize-container hidden" style="height: 20px; margin-top: 6px;">
+                        <div class="matrix-materialize-grid"></div>
+                        <div id="updater-matrix-progress-fill" class="matrix-materialize-fill" style="width: 0%;">
+                          <div class="matrix-materialize-edge"></div>
+                        </div>
+                        <div id="updater-matrix-progress-text" class="matrix-materialize-text">0% DOWNLOADING PATCH...</div>
+                      </div>
+
+                      <div id="updater-action-row" class="hidden" style="margin-top: 6px;">
+                        <button type="button" id="btn-restart-and-install" class="btn-primary" data-i18n="settings_restart_install" style="padding: 4px 14px; font-size: 11px;">
+                          [ RESTART &amp; INSTALL ]
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Feedback & Support (Smoke test invariants) -->
+                  <div style="margin-top: 6px;">
+                    <span class="cyber-dashboard-section-title" data-i18n="settings_section_feedback">5. FEEDBACK &amp; SUPPORT</span>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 4px 0 10px 0;" data-i18n="settings_feedback_desc">
+                      Hast du einen Glitch oder Bug in der Matrix entdeckt oder hast Ideen für neue Cyberpunk-Features? Sende dein Feedback direkt an unser Entwicklungsteam.
+                    </p>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-small); padding: 12px 16px; flex-wrap: wrap; gap: 12px;">
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--neon-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect width="8" height="14" x="8" y="6" rx="4"/>
+                          <path d="m19 7-3 2"/>
+                          <path d="m5 7 3 2"/>
+                          <path d="m19 19-3-2"/>
+                          <path d="m5 19 3-2"/>
+                          <path d="M20 13h-4"/>
+                          <path d="M4 13h4"/>
+                          <path d="m10 4 1 2"/>
+                          <path d="m14 4-1 2"/>
+                        </svg>
+                        <div>
+                          <div style="font-size: 12px; font-weight: 700; color: var(--text-primary);">MVP TESTER FEEDBACK &amp; BUG REPORT</div>
+                          <div style="font-size: 10px; color: var(--text-secondary); font-family: var(--font-mono);">JOTFORM FORMULAR // PROTOCOL ONLINE</div>
+                        </div>
+                      </div>
+                      <button type="button" id="btn-settings-hud-feedback" class="btn-primary" style="padding: 6px 16px; font-size: 11px;" data-i18n="settings_btn_feedback">
+                        [ FEEDBACK SENDEN ]
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Save Settings Button -->
+                  <div class="settings-save-footer">
+                    <button type="button" id="btn-save-settings" class="btn-primary" data-i18n="settings_btn_save_key">[ EINSTELLUNGEN SPEICHERN ]</button>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOWNLOADS HUD (Visible when active tab is internal://downloads) -->
+        <div id="downloads-hud" class="hidden">
+          <div class="settings-standalone-container" style="max-width: 900px;">
+            <div class="settings-standalone-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="assets/worldcraft-icon.svg" width="28" height="28" alt="Worldcraft Icon">
+                <div>
+                  <h1 class="modal-title" style="margin: 0; font-size: 16px;">WORLDCRAFT BROWSER // DOWNLOAD MANAGER</h1>
+                  <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
+                    MATRIX DATA STREAM ARCHIVE &amp; SESSION TRANSFERS
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="btn-hud-clear-downloads" class="btn-secondary" style="padding: 5px 12px; font-size: 11px;">
+                  [ HISTORIE LEEREN ]
+                </button>
+                <span class="badge-status">DATASTREAM ARCHIVE</span>
+                <span class="badge-status" style="border-color: var(--neon-green); color: var(--neon-green);">INTERNAL TAB</span>
+              </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div style="display: flex; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-small); padding: 10px 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>GESAMT:</span>
+                <span id="hud-stat-total" style="color: var(--neon-green); font-weight: 700;">0</span>
+              </div>
+              <div style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>STREAMING (AKTIV):</span>
+                <span id="hud-stat-active" style="color: var(--neon-green); font-weight: 700;">0</span>
+              </div>
+              <div style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>ENTSCHLÜSSELT &amp; BEREIT:</span>
+                <span id="hud-stat-completed" style="color: var(--neon-green); font-weight: 700;">0</span>
+              </div>
+            </div>
+
+            <!-- Downloads HUD List -->
+            <div id="downloads-hud-items" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px;">
+              <div class="datastream-empty-state">
+                <img src="assets/datastream-globe.jpg" class="datastream-globe-img" alt="Wireframe Globe">
+                <div class="datastream-idle-text">[ DATASTREAM IDLE // KEINE DOWNLOADS VORHANDEN ]</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Action Button for AI -->
+        <button id="fab-ai-toggle" aria-label="Worldcraft AI öffnen" title="Worldcraft AI öffnen">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/><path d="M9 15h6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        </button>
+      </section>
+
+      <!-- Right AI Panel -->
+      <aside id="ai-panel" class="collapsed" aria-label="Worldcraft AI Panel">
+        <div class="ai-header">
+          <div class="ai-title-wrap">
+            <span id="ai-status-indicator" class="ai-status-dot" title="Status: Wartend"></span>
+            <span class="ai-title">WORLDCRAFT NEURAL CORE</span>
+          </div>
+          <button id="btn-ai-close" class="modal-close-btn" title="Panel schließen" aria-label="Panel schließen">✕</button>
+        </div>
+
+        <div class="ai-actions-bar">
+          <button id="btn-ai-summarize" class="ai-chip-btn" title="Aktuelle Seite zusammenfassen">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Seite zusammenfassen
+          </button>
+          <button id="btn-ai-clear" class="ai-chip-btn" title="Chatverlauf leeren">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Leeren
+          </button>
+        </div>
+
+        <div id="ai-messages-list">
+          <div class="ai-msg assistant">
+            <span class="ai-msg-role">[WORLDCRAFT]</span>
+            <div class="ai-msg-body">
+              Willkommen bei Worldcraft. Ich bin dein Cyberpunk-Assistent für Recherche, Zusammenfassungen und Navigation im Web. Wie kann ich dir helfen?
+            </div>
+          </div>
+        </div>
+
+        <div id="ai-loading-box" class="ai-loading-box">
+          <div class="tab-spinner"></div>
+          <span>Matrix-Netz wird abgefragt...</span>
+        </div>
+
+        <div class="ai-input-area">
+          <textarea id="ai-input-text" placeholder="Frage an Worldcraft stellen... (Enter: Senden, Shift+Enter: Zeilenumbruch)" aria-label="Eingabefeld"></textarea>
+          <div class="ai-input-bottom">
+            <span class="ai-input-hint">Shift+Enter für neue Zeile</span>
+            <button id="btn-ai-send">SENDEN</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- PERSISTENT AUDIO ELEMENT FOR WEBRADIO -->
+  <audio id="audio-player" preload="none"></audio>
+
+  <!-- 4. MODALS -->
+  <!-- Radio Modal -->
+  <div id="modal-radio" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="radio-modal-title">
+    <div class="cyber-modal">
+      <div class="modal-header">
+        <span id="radio-modal-title" class="modal-title" data-i18n="radio_title">WORLDCRAFT // WEBRADIO</span>
+        <button class="modal-close-btn" data-close-modal="modal-radio">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="radio-player-bar">
+          <div class="radio-info">
+            <div id="radio-eq-bars" class="radio-eq-bars">
+              <div class="radio-eq-bar"></div>
+              <div class="radio-eq-bar"></div>
+              <div class="radio-eq-bar"></div>
+              <div class="radio-eq-bar"></div>
+            </div>
+            <div class="radio-station-meta">
+              <span id="radio-active-name" class="radio-station-title">Station auswählen</span>
+              <span id="radio-active-genre" class="radio-station-genre">Bereit</span>
+            </div>
+          </div>
+          <div class="radio-controls">
+            <button id="btn-radio-play" title="Wiedergabe umschalten" aria-label="Wiedergabe">▶</button>
+            <div class="radio-volume-wrap">
+              <input type="range" id="radio-volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Lautstärke">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Verfügbare Cyberpunk Streams:</label>
+          <div id="radio-stations-list" class="speed-dial-grid" style="grid-template-columns: 1fr;">
+            <!-- Rendered by renderer.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Settings Modal Fallback Anchor -->
+  <div id="modal-settings" class="hidden" style="display:none;" aria-hidden="true"></div>
+
+  <!-- Favorites Modal -->
+  <div id="modal-favorites" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fav-modal-title">
+    <div class="cyber-modal">
+      <div class="modal-header">
+        <span id="fav-modal-title" class="modal-title">FAVORITEN // SPEED DIAL VERWALTUNG</span>
+        <button class="modal-close-btn" data-close-modal="modal-favorites">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: var(--bg-tertiary); padding: 12px; border-radius: var(--radius-small); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-weight: 700; color: var(--neon-green); font-size: 11px;">NEUEN FAVORITEN HINZUFÜGEN:</span>
+          <input type="text" id="fav-new-title" class="cyber-input" placeholder="Titel (z.B. GitHub)">
+          <input type="text" id="fav-new-url" class="cyber-input" placeholder="URL (z.B. https://github.com)">
+          <button id="btn-add-favorite-submit" class="btn-primary" style="align-self: flex-start;">Hinzufügen</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gespeicherte Lesezeichen:</label>
+          <div id="favorites-full-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 250px; overflow-y: auto;">
+            <!-- Rendered by renderer.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Downloads / Session Status Modal -->
+  <div id="modal-downloads" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="cyber-modal">
+      <div class="modal-header">
+        <span class="modal-title">SYSTEM // VERLAUF & DOWNLOADS</span>
+        <button class="modal-close-btn" data-close-modal="modal-downloads">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); font-size: 12px;">Aktive Browser-Sitzung läuft in isoliertem Matrix-Sandkasten.</p>
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-small); font-family: var(--font-mono); font-size: 11px; color: var(--neon-green);">
+          <div>SESSION: AKTIV // CHROMIUM V44+ CORE</div>
+          <div>ISOLATION: VOLLSTÄNDIG (Context Isolation & Sandbox)</div>
+          <div>STATUS: BEREIT FÜR CYBER-NAVIGATION</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. TOAST CONTAINER -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <script src="locales.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" width="60" height="40">
+  <rect width="60" height="10" fill="#aa151b"/>
+  <rect y="10" width="60" height="20" fill="#f1bf00"/>
+  <rect y="30" width="60" height="10" fill="#aa151b"/>
+  <!-- Simplified Cyber Coat of Arms Motif -->
+  <g transform="translate(14, 15) scale(0.55)">
+    <rect x="0" y="2" width="14" height="15" rx="3" fill="#aa151b"/>
+    <rect x="2" y="4" width="10" height="11" fill="#f1bf00"/>
+    <circle cx="7" cy="9.5" r="3" fill="#aa151b"/>
+    <polygon points="7,0 3,3 11,3" fill="#ffce00"/>
+  </g>
+</svg>

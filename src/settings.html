@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worldcraft Browser // Einstellungen</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      background: #050805;
+      padding: 24px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-standalone-container chrome-settings-wrapper">
+    <div class="settings-standalone-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <img src="assets/worldcraft-icon.svg" width="28" height="28" alt="Worldcraft Icon">
+        <h1 class="modal-title" style="margin:0; font-size:16px;">WORLDCRAFT BROWSER // CYBERPUNK SETTINGS</h1>
+      </div>
+      <span class="badge-status">NEURAL-LINK CORE</span>
+    </div>
+
+    <div class="chrome-settings-layout">
+      <!-- Left: Chrome-style Cyberpunk Sidebar (250px) -->
+      <nav class="chrome-settings-sidebar">
+        <div class="sidebar-category-header" data-i18n="settings_sidebar_categories">KATEGORIEN</div>
+        <button type="button" class="settings-nav-item active" id="nav-item-appearance" data-target="section-appearance">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.2 0-.9.8-1.7 1.7-1.7h2c4 0 7.4-3.4 7.4-7.4C24 6.4 18.6 2 12 2z"/></svg>
+          </span>
+          <span class="nav-label" data-i18n="settings_cat_appearance">Darstellung &amp; Design</span>
+        </button>
+        <button type="button" class="settings-nav-item" id="nav-item-search" data-target="section-search">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <span class="nav-label" data-i18n="settings_cat_search">Suchmaschine</span>
+        </button>
+        <button type="button" class="settings-nav-item" id="nav-item-ai" data-target="section-ai">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          </span>
+          <span class="nav-label" data-i18n="settings_cat_ai">Worldcraft AI (Neural Link)</span>
+        </button>
+        <button type="button" class="settings-nav-item" id="nav-item-languages" data-target="section-languages">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <span class="nav-label" data-i18n="settings_cat_languages">Sprachen</span>
+        </button>
+        <button type="button" class="settings-nav-item" id="nav-item-tabs" data-target="section-tabs">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
+          <span class="nav-label" data-i18n="settings_cat_tabs">Schnellzugriff &amp; Tabs</span>
+        </button>
+        <button type="button" class="settings-nav-item" id="nav-item-about" data-target="section-about">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </span>
+          <span class="nav-label" data-i18n="settings_cat_about">Über Worldcraft &amp; Feedback</span>
+        </button>
+      </nav>
+
+      <!-- Right: Scrollable Content Container -->
+      <div class="chrome-settings-content" id="settings-content-scroll">
+        <!-- SECTION 1: DARSTELLUNG & DESIGN -->
+        <section id="section-appearance" class="cyber-settings-section">
+          <div class="cyber-section-header">
+            <div class="cyber-section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.2 0-.9.8-1.7 1.7-1.7h2c4 0 7.4-3.4 7.4-7.4C24 6.4 18.6 2 12 2z"/></svg>
+              <span data-i18n="settings_cat_appearance">DARSTELLUNG &amp; DESIGN</span>
+            </div>
+            <span class="cyber-section-badge">UI / HOMESCREEN</span>
+          </div>
+
+          <!-- Homescreen Background Customization -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings_bg_title">Homescreen-Hintergrund</span>
+            <p style="font-size:11px; color:var(--text-muted); margin:0;" data-i18n="settings_bg_desc">Passe das visuelle Erscheinungsbild deiner Cyberpunk-Startseite an.</p>
+
+            <div class="bg-mode-selector">
+              <label class="bg-mode-option active">
+                <input type="radio" name="customBgMode" value="default" checked>
+                <span class="bg-mode-label" data-i18n="settings_bg_mode_default">Cyberpunk Tech-Grid (Standard)</span>
+              </label>
+              <label class="bg-mode-option">
+                <input type="radio" name="customBgMode" value="url">
+                <span class="bg-mode-label" data-i18n="settings_bg_mode_url">Eigene Bild-URL</span>
+              </label>
+              <label class="bg-mode-option">
+                <input type="radio" name="customBgMode" value="local">
+                <span class="bg-mode-label" data-i18n="settings_bg_mode_local">Lokales Bild hochladen</span>
+              </label>
+            </div>
+
+            <!-- URL Input Subpanel -->
+            <div id="bg-url-panel" class="bg-subpanel hidden">
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" id="setting-bg-url" class="cyber-input" data-i18n-placeholder="settings_bg_url_placeholder" placeholder="https://example.com/wallpaper.jpg" style="flex:1;">
+                <button type="button" id="btn-apply-bg-url" class="btn-primary" data-i18n="settings_bg_apply_url" style="white-space:nowrap; padding:6px 14px; font-size:11px;">[ VORSCHAU &amp; ÜBERNEHMEN ]</button>
+              </div>
+            </div>
+
+            <!-- Local File Subpanel -->
+            <div id="bg-local-panel" class="bg-subpanel hidden">
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <input type="file" id="setting-bg-file" accept="image/*" style="display:none">
+                <button type="button" id="btn-choose-bg-file" class="btn-primary" data-i18n="settings_bg_upload_btn" style="padding:6px 14px; font-size:11px;">[ DATEI AUSWÄHLEN ]</button>
+                <span id="bg-file-name" style="font-size:11px; color:var(--text-secondary); font-family:var(--font-mono);">Keine Datei gewählt</span>
+              </div>
+            </div>
+
+            <!-- Reset Button -->
+            <div>
+              <button type="button" id="btn-reset-bg" class="btn-secondary" data-i18n="settings_bg_reset" style="font-size:10px; padding:4px 10px;">
+                [ AUF STANDARD-CYBERPUNK-HINTERGRUND ZURÜCKSETZEN ]
+              </button>
+            </div>
+
+            <!-- Live Preview Box -->
+            <div class="bg-preview-wrapper">
+              <div class="bg-preview-header">
+                <span class="bg-preview-title" data-i18n="settings_bg_preview_title">LIVE-VORSCHAU // HINTERGRUND</span>
+                <span id="bg-preview-mode-tag" class="cyber-section-badge">DEFAULT</span>
+              </div>
+              <div id="bg-preview-box" class="bg-preview-box">
+                <div class="bg-preview-scanlines"></div>
+                <div class="bg-preview-mockup">
+                  <div class="mockup-logo">WORLDCRAFT</div>
+                  <div class="mockup-bar"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dedicated Immediate Apply Button for New Tab & Homescreen -->
+            <button type="button" id="btn-apply-homescreen-bg" class="btn-primary" data-i18n="settings_bg_apply_immediate" style="width:100%; padding:9px 16px; font-size:11px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>[ HINTERGRUND SOFORT FÜR NEW-TAB &amp; HOMESCREEN AKTIVIEREN ]</span>
+            </button>
+          </div>
+
+          <!-- Appearance Toggles -->
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+            <label class="cyber-toggle-item" for="setting-matrix-rain">
+              <div class="cyber-toggle-text">
+                <span class="cyber-toggle-title" data-i18n="settings_matrix_rain">Matrix-Hintergrundanimation</span>
+                <span class="cyber-toggle-desc" data-i18n="settings_matrix_rain_desc">Animierter digitaler Code-Regen auf dem Homescreen</span>
+              </div>
+              <div class="cyber-switch">
+                <input type="checkbox" id="setting-matrix-rain" checked>
+                <span class="cyber-slider"></span>
+              </div>
+            </label>
+
+            <label class="cyber-toggle-item" for="setting-force-dark">
+              <div class="cyber-toggle-text">
+                <span class="cyber-toggle-title" data-i18n="settings_dark_mode">Force Dark Mode</span>
+                <span class="cyber-toggle-desc" data-i18n="settings_dark_mode_desc">Erzwingt High-Tech Dark Mode für externe Webseiten</span>
+              </div>
+              <div class="cyber-switch">
+                <input type="checkbox" id="setting-force-dark" checked>
+                <span class="cyber-slider"></span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- SECTION 2: SUCHMASCHINE -->
+        <section id="section-search" class="cyber-settings-section">
+          <div class="cyber-section-header">
+            <div class="cyber-section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span data-i18n="settings_cat_search">SUCHMASCHINEN-ROUTING</span>
+            </div>
+            <span class="cyber-section-badge">OMNIBOX UPLINK</span>
+          </div>
+
+          <div class="search-select-container">
+            <label class="form-label" for="setting-search-select" data-i18n="settings_search_select_label">Standardsuchmaschine auswählen:</label>
+            <select id="setting-search-select" class="cyber-select">
+              <option value="google">Google Matrix (https://www.google.com)</option>
+              <option value="duckduckgo">DuckDuckGo Privacy (https://duckduckgo.com)</option>
+              <option value="brave">Brave Search (https://search.brave.com)</option>
+              <option value="bing">Microsoft Bing (https://www.bing.com)</option>
+            </select>
+          </div>
+
+          <div class="search-card-grid">
+            <div class="search-engine-card active" data-engine="google">
+              <div class="search-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/google.com" alt="Google Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/google.svg';">
+              </div>
+              <div class="search-card-info">
+                <span class="search-card-name">Google Matrix</span>
+                <span class="search-card-desc">Standard Web-Index</span>
+              </div>
+              <div class="search-card-radio"></div>
+            </div>
+
+            <div class="search-engine-card" data-engine="duckduckgo">
+              <div class="search-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/duckduckgo.com" alt="DuckDuckGo Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/duckduckgo.svg';">
+              </div>
+              <div class="search-card-info">
+                <span class="search-card-name">DuckDuckGo</span>
+                <span class="search-card-desc">Zero-Tracker Privacy</span>
+              </div>
+              <div class="search-card-radio"></div>
+            </div>
+
+            <div class="search-engine-card" data-engine="brave">
+              <div class="search-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/brave.com" alt="Brave Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/brave.svg';">
+              </div>
+              <div class="search-card-info">
+                <span class="search-card-name">Brave Search</span>
+                <span class="search-card-desc">Unabhängiger Cyber-Index</span>
+              </div>
+              <div class="search-card-radio"></div>
+            </div>
+
+            <div class="search-engine-card" data-engine="bing">
+              <div class="search-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/bing.com" alt="Microsoft Bing Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/bing.svg';">
+              </div>
+              <div class="search-card-info">
+                <span class="search-card-name">Microsoft Bing</span>
+                <span class="search-card-desc">Cognitive Web-Search</span>
+              </div>
+              <div class="search-card-radio"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: WORLDCRAFT AI (NEURAL LINK) -->
+        <section id="section-ai" class="cyber-settings-section">
+          <div class="cyber-section-header">
+            <div class="cyber-section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+              <span data-i18n="settings_cat_ai">WORLDCRAFT AI (NEURAL LINK)</span>
+            </div>
+            <span class="cyber-section-badge">MULTI-PROVIDER BYOK</span>
+          </div>
+
+          <!-- Live Status Indicator -->
+          <div class="ai-status-row">
+            <span class="form-label" data-i18n="settings_ai_status_label">Neural-Link Status:</span>
+            <div id="ai-status-indicator" class="ai-status-indicator not-configured">
+              <span class="ai-pulse-dot"></span>
+              <span id="ai-status-badge-text" data-i18n="settings_ai_status_inactive">NICHT KONFIGURIERT // STANDBY</span>
+            </div>
+          </div>
+
+          <!-- Provider Cards Grid -->
+          <div class="multi-provider-grid">
+            <div class="provider-card active" data-provider="google">
+              <div class="provider-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/gemini.google.com" alt="Google Gemini Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='https://www.gstatic.com/images/branding/product/2x/gemini_32dp.png'; this.onerror=function(){this.src='assets/brands/gemini.svg';};">
+              </div>
+              <div class="provider-card-info">
+                <span class="provider-card-name">Google (Gemini)</span>
+                <span class="provider-card-desc">gemini-3.8-flash // 2.5-pro</span>
+              </div>
+              <div class="provider-card-radio"></div>
+            </div>
+
+            <div class="provider-card" data-provider="openai">
+              <div class="provider-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/openai.com" alt="OpenAI Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/openai.svg';">
+              </div>
+              <div class="provider-card-info">
+                <span class="provider-card-name">OpenAI (ChatGPT)</span>
+                <span class="provider-card-desc">gpt-4o // gpt-4o-mini</span>
+              </div>
+              <div class="provider-card-radio"></div>
+            </div>
+
+            <div class="provider-card" data-provider="anthropic">
+              <div class="provider-card-icon brand-logo-icon">
+                <img src="https://logo.clearbit.com/anthropic.com" alt="Anthropic Logo" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/brands/anthropic.svg';">
+              </div>
+              <div class="provider-card-info">
+                <span class="provider-card-name">Anthropic (Claude)</span>
+                <span class="provider-card-desc">claude-3-5-sonnet // haiku</span>
+              </div>
+              <div class="provider-card-radio"></div>
+            </div>
+
+            <div class="provider-card" data-provider="ollama">
+              <div class="provider-card-icon brand-logo-icon">
+                <img src="assets/brands/ollama.svg" alt="Local Server / Ollama" class="brand-logo-img" onerror="this.onerror=null; this.src='assets/worldcraft-icon.svg';">
+              </div>
+              <div class="provider-card-info">
+                <span class="provider-card-name">Local (Ollama)</span>
+                <span class="provider-card-desc">localhost:11434 // open weights</span>
+              </div>
+              <div class="provider-card-radio"></div>
+            </div>
+          </div>
+
+          <!-- Masked Key Input with Eye Toggle & Action Buttons -->
+          <div class="neural-key-container">
+            <label class="form-label" id="neural-key-label" for="setting-neural-key">NEURAL-LINK KEY // API (GOOGLE GEMINI):</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="setting-neural-key" class="cyber-input" data-i18n-placeholder="settings_ai_key_placeholder" placeholder="API-Key hier einfügen...">
+              <button type="button" id="btn-toggle-key-visibility" class="btn-eye-toggle" title="Passwort anzeigen/verbergen" aria-label="Toggle password visibility">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+
+            <a id="neural-key-help-link" class="get-api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span>[ GET FREE API KEY ]</span>
+            </a>
+
+            <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap:wrap;">
+              <button type="button" id="btn-save-neural-key" class="btn-primary" data-i18n="settings_btn_save_key" style="padding: 4px 12px; font-size: 11px;">[ SCHLÜSSEL SPEICHERN ]</button>
+              <button type="button" id="btn-clear-neural-key" class="btn-secondary" data-i18n="settings_btn_clear_key" style="padding: 4px 12px; font-size: 11px;">[ LÖSCHEN ]</button>
+              <button type="button" id="btn-test-neural-key" class="btn-secondary" data-i18n="settings_ai_btn_test" style="padding: 4px 12px; font-size: 11px; border-color: var(--neon-cyan); color: var(--neon-cyan);">[ KEY TESTEN ]</button>
+            </div>
+
+            <div id="key-test-feedback" class="key-test-feedback hidden"></div>
+
+            <span style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+              Kein fester Standard-Key im Quellcode (0 € Entwicklerkosten). Schlüssel werden kryptografisch via SafeStorage (DPAPI) im Profil isoliert.
+            </span>
+          </div>
+
+          <!-- Active Model Tier Selector -->
+          <div style="margin-top: 8px;">
+            <label class="form-label" style="margin-bottom: 6px; display: block;">Ausgewählte Modell-Stufe:</label>
+            <div class="neural-model-grid">
+              <div class="neural-model-card active" data-model-tier="fast">
+                <div class="neural-model-header">
+                  <span class="neural-model-name">CORE FAST</span>
+                  <span class="neural-badge">AKTIV</span>
+                </div>
+                <span class="neural-model-id" id="neural-model-id-fast">gemini-3.8-flash</span>
+                <span class="neural-model-desc">Niedrige Latenz, Echtzeit-Recherche und reaktionsschnelle UI-Synthese.</span>
+              </div>
+
+              <div class="neural-model-card" data-model-tier="pro">
+                <div class="neural-model-header">
+                  <span class="neural-model-name">CORE PRO</span>
+                  <span class="neural-badge">VERFÜGBAR</span>
+                </div>
+                <span class="neural-model-id" id="neural-model-id-pro">gemini-2.5-pro</span>
+                <span class="neural-model-desc">Höchste kognitive Tiefe, komplexe System-Synthese und Deep Coding.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Toggle Switch -->
+          <div style="margin-top: 8px;">
+            <label class="cyber-toggle-item" for="setting-ai-startup">
+              <div class="cyber-toggle-text">
+                <span class="cyber-toggle-title">KI-Seitenpanel beim Start</span>
+                <span class="cyber-toggle-desc">Öffnet Worldcraft AI automatisch bei jedem Browserstart</span>
+              </div>
+              <div class="cyber-switch">
+                <input type="checkbox" id="setting-ai-startup">
+                <span class="cyber-slider"></span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- SECTION 4: SPRACHEN -->
+        <section id="section-languages" class="cyber-settings-section">
+          <div class="cyber-section-header">
+            <div class="cyber-section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span data-i18n="settings_section_lang">SPRACHE &amp; LOKALISIERUNG</span>
+            </div>
+            <span class="cyber-section-badge">7 REGIONS</span>
+          </div>
+
+          <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 4px 0;" data-i18n="settings_lang_desc">Wähle die Anzeigesprache für die Benutzeroberfläche und die automatische Webseitenübersetzung.</p>
+
+          <div id="language-flags-grid" class="language-flags-grid">
+            <div class="lang-flag-tile active" data-lang="de" title="Deutsch (DE)">
+              <img src="assets/flags/de.svg" class="flag-icon-svg" alt="Deutsch">
+              <div class="flag-info">
+                <span class="flag-name">Deutsch</span>
+                <span class="flag-code">DE</span>
+              </div>
+            </div>
+            <div class="lang-flag-tile" data-lang="en" title="English (US/UK)">
+              <img src="assets/flags/en.svg" class="flag-icon-svg" alt="English">
+              <div class="flag-info">
+                <span class="flag-name">English</span>
+                <span class="flag-code">US / UK</span>
+              </div>
+            </div>
+            <div class="lang-flag-tile" data-lang="es" title="Español (ES)">
+              <img src="assets/flags/es.svg" class="flag-icon-svg" alt="Español">
+              <div class="flag-info">
+                <span class="flag-name">Español</span>
+                <span class="flag-code">ES</span>
+              </div>
+            </div>
+            <div class="lang-flag-tile" data-lang="fr" title="Français (FR)">
+              <img src="assets/flags/fr.svg" class="flag-icon-svg" alt="Français">
+              <div class="flag-info">
+                <span class="flag-name">Français</span>
+                <span class="flag-code">FR</span>
+              </div>
+            </div>
+            <div class="lang-flag-tile" data-lang="it" title="Italiano (IT)">
+              <img src="assets/flags/it.svg" class="flag-icon-svg" alt="Italiano">
+              <div class="flag-info">
+                <span class="flag-name">Italiano</span>
+                <span class="flag-code">IT</span>
+              </div>
+            </div>
+            <div class="lang-flag-tile" data-lang="pl" title="Polski (PL)">
+              <img src="assets/flags/pl.svg" class="flag-icon-svg" alt="Polski">
+              <div class="flag-info">
+                <span class="flag-name">Polski</span>
+                <span class="flag-code">PL</span>
+              </div>
+            </div>
+            <div class="lang-flag-tile" data-lang="uk" title="Українська (UK)">
+              <img src="assets/flags/uk.svg" class="flag-icon-svg" alt="Українська">
+              <div class="flag-info">
+                <span class="flag-name">Українська</span>
+                <span class="flag-code">UK</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 5: SCHNELLZUGRIFF & TABS -->
+        <section id="section-tabs" class="cyber-settings-section">
+          <div class="cyber-section-header">
+            <div class="cyber-section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span data-i18n="settings_cat_tabs">SCHNELLZUGRIFF &amp; TABS</span>
+            </div>
+            <span class="cyber-section-badge">SPEED &amp; MEDIA</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label class="cyber-toggle-item" for="setting-background-radio">
+              <div class="cyber-toggle-text">
+                <span class="cyber-toggle-title" data-i18n="settings_radio_bg">Hintergrundradio</span>
+                <span class="cyber-toggle-desc" data-i18n="settings_radio_bg_desc">Musik läuft beim Navigieren und Tab-Wechseln unterbrechungsfrei weiter</span>
+              </div>
+              <div class="cyber-switch">
+                <input type="checkbox" id="setting-background-radio" checked>
+                <span class="cyber-slider"></span>
+              </div>
+            </label>
+
+            <label class="cyber-toggle-item" for="setting-animated-downloads">
+              <div class="cyber-toggle-text">
+                <span class="cyber-toggle-title" data-i18n="settings_animated_downloads">Animierte Downloadvisualisierung</span>
+                <span class="cyber-toggle-desc" data-i18n="settings_animated_downloads_desc">Horizontale Matrix-Datenstromanzeige im Download-Manager</span>
+              </div>
+              <div class="cyber-switch">
+                <input type="checkbox" id="setting-animated-downloads" checked>
+                <span class="cyber-slider"></span>
+              </div>
+            </label>
+
+            <label class="cyber-toggle-item" for="setting-notify-updates">
+              <div class="cyber-toggle-text">
+                <span class="cyber-toggle-title">Updatebenachrichtigungen</span>
+                <span class="cyber-toggle-desc">Automatische HUD-Meldung bei neuen Versionen</span>
+              </div>
+              <div class="cyber-switch">
+                <input type="checkbox" id="setting-notify-updates" checked>
+                <span class="cyber-slider"></span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- SECTION 6: ÜBER WORLDCRAFT & FEEDBACK -->
+        <section id="section-about" class="cyber-settings-section">
+          <div class="cyber-section-header">
+            <div class="cyber-section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span data-i18n="settings_cat_about">ÜBER WORLDCRAFT &amp; FEEDBACK</span>
+            </div>
+            <span class="cyber-section-badge">RELEASE V1.2.0</span>
+          </div>
+
+          <!-- Auto-Updater & Version Badge (Smoke test invariants) -->
+          <div class="version-updater-container">
+            <div class="version-badge-row">
+              <div id="cyber-version-badge" class="cyber-version-badge">
+                [ WORLDCRAFT CORE // V<span id="version-display-val">1.2.0</span> // PROTOCOL STABLE ]
+              </div>
+              <button type="button" id="btn-check-updates" class="btn-check-updates">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                <span data-i18n="settings_check_updates">[ CHECK FOR UPDATES ]</span>
+              </button>
+            </div>
+
+            <div id="updater-terminal-box" class="updater-terminal-box hidden">
+              <div class="updater-terminal-line">
+                <span class="term-prompt">&gt;</span>
+                <span id="updater-status-text">PINGING UPDATE SERVERS...</span>
+              </div>
+
+              <div id="updater-matrix-progress-wrap" class="matrix-materialize-container hidden" style="height: 20px; margin-top: 6px;">
+                <div class="matrix-materialize-grid"></div>
+                <div id="updater-matrix-progress-fill" class="matrix-materialize-fill" style="width: 0%;">
+                  <div class="matrix-materialize-edge"></div>
+                </div>
+                <div id="updater-matrix-progress-text" class="matrix-materialize-text">0% DOWNLOADING PATCH...</div>
+              </div>
+
+              <div id="updater-action-row" class="hidden" style="margin-top: 6px;">
+                <button type="button" id="btn-restart-and-install" class="btn-primary" data-i18n="settings_restart_install" style="padding: 4px 14px; font-size: 11px;">
+                  [ RESTART &amp; INSTALL ]
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback & Support (Smoke test invariants) -->
+          <div style="margin-top: 6px;">
+            <span class="cyber-dashboard-section-title" data-i18n="settings_section_feedback">5. FEEDBACK &amp; SUPPORT</span>
+            <p style="font-size: 11px; color: var(--text-muted); margin: 4px 0 10px 0;" data-i18n="settings_feedback_desc">
+              Hast du einen Glitch oder Bug in der Matrix entdeckt oder hast Ideen für neue Cyberpunk-Features? Sende dein Feedback direkt an unser Entwicklungsteam.
+            </p>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-small); padding: 12px 16px; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--neon-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="8" height="14" x="8" y="6" rx="4"/>
+                  <path d="m19 7-3 2"/>
+                  <path d="m5 7 3 2"/>
+                  <path d="m19 19-3-2"/>
+                  <path d="m5 19 3-2"/>
+                  <path d="M20 13h-4"/>
+                  <path d="M4 13h4"/>
+                  <path d="m10 4 1 2"/>
+                  <path d="m14 4-1 2"/>
+                </svg>
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: var(--text-primary);">MVP TESTER FEEDBACK &amp; BUG REPORT</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); font-family: var(--font-mono);">JOTFORM FORMULAR // PROTOCOL ONLINE</div>
+                </div>
+              </div>
+              <button type="button" id="btn-settings-feedback" class="btn-primary" style="padding: 6px 16px; font-size: 11px;" data-i18n="settings_btn_feedback">
+                [ FEEDBACK SENDEN ]
+              </button>
+            </div>
+          </div>
+
+          <!-- Save Settings Button -->
+          <div class="settings-save-footer">
+            <button type="button" id="btn-save-settings" class="btn-primary" data-i18n="settings_btn_save_key">[ EINSTELLUNGEN SPEICHERN ]</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="locales.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
