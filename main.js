@@ -2435,16 +2435,18 @@ function registerIpcHandlers() {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  // Protokoll-Registrierung für http & https (Windows Standardbrowser)
+  // Protokoll-Registrierung für http, https & worldcraft (Windows Standardbrowser)
   try {
     if (process.defaultApp) {
       if (process.argv.length >= 2) {
         app.setAsDefaultProtocolClient('http', process.execPath, [path.resolve(process.argv[1])]);
         app.setAsDefaultProtocolClient('https', process.execPath, [path.resolve(process.argv[1])]);
+        app.setAsDefaultProtocolClient('worldcraft', process.execPath, [path.resolve(process.argv[1])]);
       }
     } else {
       app.setAsDefaultProtocolClient('http');
       app.setAsDefaultProtocolClient('https');
+      app.setAsDefaultProtocolClient('worldcraft');
     }
   } catch (err) {
     console.warn('[Worldcraft Protocol Registration Error]:', err.message);

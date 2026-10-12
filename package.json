@@ -44,6 +44,12 @@
           "http",
           "https"
         ]
+      },
+      {
+        "name": "Worldcraft-Protokoll",
+        "schemes": [
+          "worldcraft"
+        ]
       }
     ],
     "fileAssociations": [
