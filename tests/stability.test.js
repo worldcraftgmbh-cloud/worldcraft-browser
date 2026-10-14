@@ -208,9 +208,11 @@ test('Shortcuts: F12 toggles DevTools docked at bottom (mode: bottom) on active 
 test('Stability: Google Sign-in rejection handler informs user and preserves back navigation', () => {
   const mainCode = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
   assert.equal(mainCode.includes('function handleGoogleRejectedNotice(webContents)'), true, 'main.js must define handleGoogleRejectedNotice');
-  assert.equal(mainCode.includes("currentUrl.includes('accounts.google.com') && currentUrl.includes('rejected')"), true, 'must target Google accounts rejected URLs');
+  assert.equal(mainCode.includes("parsed.hostname.toLowerCase() === 'accounts.google.com' &&"), true, 'must strictly target accounts.google.com host');
+  assert.equal(mainCode.includes("parsed.pathname.toLowerCase().includes('/rejected')"), true, 'must strictly target /rejected pathname');
   assert.equal(mainCode.includes('worldcraft-google-notice'), true, 'must inject user-friendly explanation notice');
   assert.equal(mainCode.includes('window.history.back()'), true, 'must provide back button to return to previous website');
+  assert.equal(mainCode.includes('window.close()'), true, 'must provide close button in popup windows');
 });
 
 

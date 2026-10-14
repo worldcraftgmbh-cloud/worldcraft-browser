@@ -512,10 +512,21 @@ function handleGoogleRejectedNotice(webContents) {
   if (!webContents || webContents.isDestroyed()) return;
   try {
     const currentUrl = webContents.getURL();
-    if (currentUrl && currentUrl.includes('accounts.google.com') && currentUrl.includes('rejected')) {
+    if (!currentUrl) return;
+    let parsed;
+    try {
+      parsed = new URL(currentUrl);
+    } catch (e) {
+      return;
+    }
+    // Strikte Host- und Pfadprüfung: Nur authentische Google-Accounts-Sperrseiten
+    if (parsed.protocol === 'https:' &&
+        parsed.hostname.toLowerCase() === 'accounts.google.com' &&
+        parsed.pathname.toLowerCase().includes('/rejected')) {
       webContents.executeJavaScript(`
         (() => {
           if (document.getElementById('worldcraft-google-notice')) return;
+          const isPopup = Boolean(window.opener);
           const banner = document.createElement('div');
           banner.id = 'worldcraft-google-notice';
           banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(135deg,#13131e,#222238);border-bottom:2px solid #00f0ff;color:#fff;padding:14px 20px;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:space-between;gap:16px;box-sizing:border-box;';
@@ -523,20 +534,24 @@ function handleGoogleRejectedNotice(webContents) {
             <div style="display:flex;align-items:center;gap:12px;">
               <span style="font-size:22px;line-height:1;">ℹ️</span>
               <div>
-                <div style="font-weight:700;font-size:13px;color:#00f0ff;margin-bottom:2px;">Hinweis zur Google-Kontoanmeldung</div>
+                <div style="font-weight:700;font-size:13px;color:#00f0ff;margin-bottom:2px;">Google-Anmeldung abgelehnt</div>
                 <div style="font-size:12px;color:#d1d5db;line-height:1.4;">
-                  Google erlaubt die Passworteingabe aus Sicherheitsgründen nicht in Desktop-Browsern (Embedded WebViews).
+                  Google hat diesen konkreten Anmeldeversuch abgelehnt; eingebettete Browserkontexte werden bei bestimmten OAuth-Abläufen von Google nicht unterstützt.
                   Nutzen Sie auf der gewünschten Website bitte eine alternative Anmeldemethode (z.&nbsp;B. E-Mail/Passwort, GitHub oder Discord).
                 </div>
               </div>
             </div>
             <div style="display:flex;gap:8px;flex-shrink:0;">
-              <button id="wc-btn-goback" style="background:#00f0ff;color:#000;border:none;padding:8px 14px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;">← Zurück zur Website</button>
+              \${isPopup
+                ? '<button id="wc-btn-close-popup" style="background:#00f0ff;color:#000;border:none;padding:8px 14px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;">Fenster schließen</button>'
+                : '<button id="wc-btn-goback" style="background:#00f0ff;color:#000;border:none;padding:8px 14px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;">← Zurück zur Website</button>'
+              }
               <button id="wc-btn-dismiss" style="background:transparent;color:#9ca3af;border:1px solid #4b5563;padding:8px 12px;border-radius:4px;font-size:12px;cursor:pointer;">Schließen</button>
             </div>
           \`;
           document.body.prepend(banner);
           document.getElementById('wc-btn-goback')?.addEventListener('click', () => { window.history.back(); });
+          document.getElementById('wc-btn-close-popup')?.addEventListener('click', () => { window.close(); });
           document.getElementById('wc-btn-dismiss')?.addEventListener('click', () => { banner.remove(); });
         })()
       `).catch(() => {});
