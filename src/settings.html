@@ -516,11 +516,21 @@
                 <div id="updater-matrix-progress-text" class="matrix-materialize-text">0% DOWNLOADING PATCH...</div>
               </div>
 
-              <div id="updater-action-row" class="hidden" style="margin-top: 6px;">
+              <div id="updater-action-row" class="hidden" style="margin-top: 6px; display: flex; gap: 8px;">
+                <button type="button" id="btn-download-update" class="btn-primary hidden" data-i18n="settings_download_update" style="padding: 4px 14px; font-size: 11px;">
+                  [ DOWNLOAD UPDATE ]
+                </button>
                 <button type="button" id="btn-restart-and-install" class="btn-primary" data-i18n="settings_restart_install" style="padding: 4px 14px; font-size: 11px;">
                   [ RESTART &amp; INSTALL ]
                 </button>
               </div>
+            </div>
+
+            <div class="setting-row" style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <label for="chk-auto-check-updates" style="font-size: 11px; color: var(--text-muted); cursor: pointer;">
+                Beim Programmstart automatisch nach Updates suchen
+              </label>
+              <input type="checkbox" id="chk-auto-check-updates" checked style="accent-color: var(--neon-cyan); cursor: pointer;" />
             </div>
           </div>
 

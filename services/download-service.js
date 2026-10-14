@@ -18,6 +18,9 @@ class DownloadService {
     this.onUpdateCallback = null;
     this.shellModule = options.shell || shell;
     this.pruneTimer = null;
+    this.registeredSessions = new WeakSet();
+    this._isWritingHistory = false;
+    this._writePending = false;
   }
 
   async init() {
@@ -76,18 +79,28 @@ class DownloadService {
   }
 
   async _atomicWriteHistory() {
+    if (this._isWritingHistory) {
+      this._writePending = true;
+      return;
+    }
+    this._isWritingHistory = true;
     try {
-      const dataStr = JSON.stringify(this.history.slice(0, MAX_HISTORY_ITEMS), null, 2);
-      const tempPath = `${this.historyFile}.${Date.now()}.${Math.random().toString(36).substring(2, 6)}.tmp`;
-      await fs.promises.writeFile(tempPath, dataStr, 'utf8');
-      try {
-        await fs.promises.rename(tempPath, this.historyFile);
-      } catch (renameErr) {
-        await fs.promises.copyFile(tempPath, this.historyFile);
-        await fs.promises.unlink(tempPath).catch(() => {});
-      }
+      do {
+        this._writePending = false;
+        const dataStr = JSON.stringify(this.history.slice(0, MAX_HISTORY_ITEMS), null, 2);
+        const tempPath = `${this.historyFile}.${Date.now()}.${Math.random().toString(36).substring(2, 6)}.tmp`;
+        await fs.promises.writeFile(tempPath, dataStr, 'utf8');
+        try {
+          await fs.promises.rename(tempPath, this.historyFile);
+        } catch (renameErr) {
+          await fs.promises.copyFile(tempPath, this.historyFile);
+          await fs.promises.unlink(tempPath).catch(() => {});
+        }
+      } while (this._writePending);
     } catch (err) {
       console.error('[DownloadService] Failed to save downloads history:', err.message);
+    } finally {
+      this._isWritingHistory = false;
     }
   }
 
@@ -163,29 +176,56 @@ class DownloadService {
   }
 
   /**
-   * Attaches to a session's will-download event
+   * Attaches to a session's will-download event (deduplicated per session)
    */
   registerSession(session) {
     if (!session || typeof session.on !== 'function') return;
+    if (!this.registeredSessions) {
+      this.registeredSessions = new WeakSet();
+    }
+    if (this.registeredSessions.has(session)) return;
+    this.registeredSessions.add(session);
 
     session.on('will-download', (event, item, webContents) => {
-      this.handleWillDownload(item, webContents);
+      try {
+        this.handleWillDownload(item, webContents);
+      } catch (err) {
+        console.error('[DownloadService] Error in will-download handler:', err.message);
+      }
     });
   }
 
   handleWillDownload(item, webContents) {
-    const id = `dl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    const originalName = item.getFilename();
+    if (!item) return;
+
+    let originalName = 'download';
+    try {
+      originalName = item.getFilename();
+    } catch (e) {}
     const sanitizedName = this.sanitizeFileName(originalName);
 
+    const id = `dl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const startTime = Date.now();
-    const totalBytes = item.getTotalBytes() || 0;
+    let totalBytes = 0;
+    try {
+      totalBytes = item.getTotalBytes() || 0;
+    } catch (e) {}
+
+    let itemUrl = '';
+    try {
+      itemUrl = item.getURL() || '';
+    } catch (e) {}
+
+    let initialSavePath = '';
+    try {
+      initialSavePath = item.getSavePath() || '';
+    } catch (e) {}
 
     const meta = {
       id,
       fileName: sanitizedName,
-      url: item.getURL() || '',
-      savePath: item.getSavePath() || '',
+      url: itemUrl,
+      savePath: initialSavePath,
       totalBytes: totalBytes > 0 ? totalBytes : -1,
       receivedBytes: 0,
       percent: totalBytes > 0 ? 0 : null,
@@ -207,62 +247,78 @@ class DownloadService {
     this._notify('created', meta);
 
     item.on('updated', (event, state) => {
-      const now = Date.now();
-      const timeDelta = Math.max(1, now - tracker.lastTime);
-      const currentReceived = item.getReceivedBytes() || 0;
-      const currentTotal = item.getTotalBytes();
+      try {
+        const now = Date.now();
+        const timeDelta = Math.max(1, now - tracker.lastTime);
+        let currentReceived = 0;
+        let currentTotal = 0;
+        try {
+          currentReceived = item.getReceivedBytes() || 0;
+          currentTotal = item.getTotalBytes();
+        } catch (e) {}
 
-      const { percent, speed } = DownloadService.calculateMetrics(
-        currentReceived,
-        currentTotal,
-        tracker.lastBytes,
-        timeDelta
-      );
+        const { percent, speed } = DownloadService.calculateMetrics(
+          currentReceived,
+          currentTotal,
+          tracker.lastBytes,
+          timeDelta
+        );
 
-      tracker.meta.receivedBytes = currentReceived;
-      tracker.meta.totalBytes = currentTotal > 0 ? currentTotal : -1;
-      tracker.meta.percent = percent;
-      tracker.meta.speed = speed;
-      tracker.meta.savePath = item.getSavePath() || tracker.meta.savePath;
+        tracker.meta.receivedBytes = currentReceived;
+        tracker.meta.totalBytes = currentTotal > 0 ? currentTotal : -1;
+        tracker.meta.percent = percent;
+        tracker.meta.speed = speed;
+        try {
+          tracker.meta.savePath = item.getSavePath() || tracker.meta.savePath;
+        } catch (e) {}
 
-      if (state === 'interrupted') {
-        tracker.meta.state = 'interrupted';
-      } else {
-        tracker.meta.state = 'progressing';
+        if (state === 'interrupted') {
+          tracker.meta.state = 'interrupted';
+        } else {
+          tracker.meta.state = 'progressing';
+        }
+
+        tracker.lastTime = now;
+        tracker.lastBytes = currentReceived;
+
+        this._notify('updated', tracker.meta);
+      } catch (err) {
+        console.error('[DownloadService] Error processing download updated event:', err.message);
       }
-
-      tracker.lastTime = now;
-      tracker.lastBytes = currentReceived;
-
-      this._notify('updated', tracker.meta);
     });
 
     item.once('done', async (event, state) => {
-      tracker.meta.endTime = Date.now();
-      tracker.meta.speed = 0;
-      tracker.meta.savePath = item.getSavePath() || tracker.meta.savePath;
+      try {
+        tracker.meta.endTime = Date.now();
+        tracker.meta.speed = 0;
+        try {
+          tracker.meta.savePath = item.getSavePath() || tracker.meta.savePath;
+        } catch (e) {}
 
-      if (state === 'completed') {
-        tracker.meta.state = 'completed';
-        tracker.meta.percent = 100;
-        tracker.meta.receivedBytes = tracker.meta.totalBytes > 0 ? tracker.meta.totalBytes : tracker.meta.receivedBytes;
-      } else if (state === 'cancelled') {
-        tracker.meta.state = 'cancelled';
-      } else {
-        tracker.meta.state = 'interrupted';
-        tracker.meta.error = 'Download unterbrochen oder Netzwerkfehler';
+        if (state === 'completed') {
+          tracker.meta.state = 'completed';
+          tracker.meta.percent = 100;
+          tracker.meta.receivedBytes = tracker.meta.totalBytes > 0 ? tracker.meta.totalBytes : tracker.meta.receivedBytes;
+        } else if (state === 'cancelled') {
+          tracker.meta.state = 'cancelled';
+        } else {
+          tracker.meta.state = 'interrupted';
+          tracker.meta.error = 'Download unterbrochen oder Netzwerkfehler';
+        }
+
+        this.activeDownloads.delete(id);
+
+        // Prepend to history
+        this.history.unshift({ ...tracker.meta });
+        if (this.history.length > MAX_HISTORY_ITEMS) {
+          this.history = this.history.slice(0, MAX_HISTORY_ITEMS);
+        }
+
+        await this._atomicWriteHistory();
+        this._notify('done', tracker.meta);
+      } catch (err) {
+        console.error('[DownloadService] Error processing download done event:', err.message);
       }
-
-      this.activeDownloads.delete(id);
-
-      // Prepend to history
-      this.history.unshift({ ...tracker.meta });
-      if (this.history.length > MAX_HISTORY_ITEMS) {
-        this.history = this.history.slice(0, MAX_HISTORY_ITEMS);
-      }
-
-      await this._atomicWriteHistory();
-      this._notify('done', tracker.meta);
     });
   }
 

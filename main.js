@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, WebContentsView, ipcMain, safeStorage, shell, nativeTheme, Menu, globalShortcut, screen, clipboard } = require('electron');
+const { app, BrowserWindow, WebContentsView, ipcMain, safeStorage, shell, nativeTheme, Menu, globalShortcut, screen, clipboard, components, session, dialog } = require('electron');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -14,10 +14,17 @@ const { DownloadService } = require('./services/download-service');
 const { UpdateService } = require('./services/update-service');
 const { buildTabGhostHtml } = require('./services/tab-ghost');
 
+// Dynamischer Google Chrome User-Agent basierend auf der echten Chromium-Version (verhindert Versionsdiskrepanzen)
+const realChromeVersion = (process.versions && process.versions.chrome) || '130.0.6723.137';
+const realChromeMajor = realChromeVersion.split('.')[0] || '130';
+const CHROME_USER_AGENT = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${realChromeVersion} Safari/537.36`;
+app.userAgentFallback = CHROME_USER_AGENT;
+
 // Configure Dark Mode & Force Dark Chromium Feature
 nativeTheme.themeSource = 'dark';
 try {
   app.commandLine.appendSwitch('enable-features', 'WebContentsForceDark');
+  app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 } catch (e) {
   // Ignore flag warning if already started
 }
@@ -500,6 +507,7 @@ function createNativeContextMenu(wc, params, win = null) {
  */
 function configureExternalWebContents(view, tabId, win = null) {
   const wc = view.webContents;
+  wc.setUserAgent(CHROME_USER_AGENT);
 
   if (downloadService) {
     downloadService.registerSession(wc.session);
@@ -535,7 +543,7 @@ function configureExternalWebContents(view, tabId, win = null) {
       navigateTab(tabId, 'worldcraft://dev-forge');
       return;
     }
-    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('file://')) {
+    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('file://') || lower.startsWith('blob:') || lower.startsWith('data:')) {
       return; // Allowed
     }
     event.preventDefault();
@@ -549,10 +557,47 @@ function configureExternalWebContents(view, tabId, win = null) {
 
   wc.on('will-redirect', (event, redirectUrl) => {
     const lower = redirectUrl.toLowerCase();
-    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('file://')) {
+    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('file://') || lower.startsWith('blob:') || lower.startsWith('data:')) {
       return; // Allowed
     }
     event.preventDefault();
+  });
+
+  // Renderer-Absturz-Schutz fuer WebContents
+  wc.on('render-process-gone', (event, details) => {
+    console.error(`[Worldcraft Tab Crash] Tab ${tabId} render-process-gone: reason=${details.reason}, exitCode=${details.exitCode}`);
+    const tab = tabs.get(tabId);
+    if (tab) {
+      tab.isLoading = false;
+      tab.error = `Tab abgestürzt: ${details.reason} (Code ${details.exitCode})`;
+      tab.isErrorPage = true;
+      const tabWin = win || getWindowForTab(tab);
+      broadcastTabState(tabWin);
+      notifyNavState(tabId, wc, tabWin);
+
+      if (!wc.isDestroyed()) {
+        try {
+          const errorPagePath = path.join(__dirname, 'src', 'error.html');
+          wc.loadFile(errorPagePath, {
+            query: {
+              type: 'not_found',
+              code: String(details.exitCode),
+              desc: `Prozess-Absturz (${details.reason})`,
+              url: tab.url || '',
+              lang: 'de'
+            }
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+  });
+
+  wc.on('unresponsive', () => {
+    console.warn(`[Worldcraft Crash Guard] Tab ${tabId} webContents unresponsive.`);
+  });
+
+  wc.on('responsive', () => {
+    console.info(`[Worldcraft Crash Guard] Tab ${tabId} webContents responsive again.`);
   });
 
   // WebContents event tracking
@@ -741,22 +786,35 @@ function updateActiveViewPlacement(targetWin = null) {
   const currentActiveId = activeTabByWindow.get(win.id) || (win === mainWindow ? activeTabId : null);
   const currentTab = tabs.get(currentActiveId);
 
-  // Remove any previously attached child views from contentView
-  const children = win.contentView.children;
-  for (const child of children) {
-    win.contentView.removeChildView(child);
-  }
+  // Remove any previously attached child views from contentView safely
+  try {
+    const children = Array.from(win.contentView.children || []);
+    for (const child of children) {
+      if (child) {
+        try { win.contentView.removeChildView(child); } catch (e) {}
+      }
+    }
+  } catch (e) {}
 
-  // If the active tab has an external view and is not on home screen/internal views, attach it
+  // If the active tab has an external view and is not on home screen/internal views, attach it safely
   if (currentTab && !currentTab.isHome && !currentTab.isForge && !currentTab.isSettings && !currentTab.isDownloads && currentTab.view) {
+    if (currentTab.view.webContents && currentTab.view.webContents.isDestroyed()) {
+      return;
+    }
     if (!isViewTemporarilyHidden) {
-      recalculateViewportBounds(win);
-      const bounds = windowViewportBounds.get(win.id) || currentViewportBounds;
-      win.contentView.addChildView(currentTab.view);
-      currentTab.view.setBounds(bounds);
+      try {
+        recalculateViewportBounds(win);
+        const bounds = windowViewportBounds.get(win.id) || currentViewportBounds;
+        win.contentView.addChildView(currentTab.view);
+        currentTab.view.setBounds(bounds);
+      } catch (err) {
+        console.error('[Worldcraft View] Failed to attach view to window:', err.message);
+      }
     }
     if (typeof currentTab.view.setVisible === 'function') {
-      currentTab.view.setVisible(!isViewTemporarilyHidden);
+      try {
+        currentTab.view.setVisible(!isViewTemporarilyHidden);
+      } catch (e) {}
     }
   }
 }
@@ -808,7 +866,8 @@ function createNewTab(url = '', activateImmediately = true, targetWin = null) {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
-        webviewTag: false
+        webviewTag: false,
+        plugins: true
       }
     });
     configureExternalWebContents(view, id, win);
@@ -1019,14 +1078,14 @@ function handleBrowserInputEvent(event, input, targetWin = null, sourceWc = null
     }
   };
 
-  routeBrowserShortcut(trackedEvent, input, win);
+  routeBrowserShortcut(trackedEvent, input, win, sourceWc);
 
   if (handled) {
     console.log('[SHORTCUT TRIGGERED]', input.key);
   }
 }
 
-function routeBrowserShortcut(event, input, win) {
+function routeBrowserShortcut(event, input, win, sourceWc = null) {
   const keyLower = (input.key || '').toLowerCase();
   const code = input.code || '';
   const ctrlOrMeta = Boolean(input.control || input.meta);
@@ -1042,6 +1101,45 @@ function routeBrowserShortcut(event, input, win) {
   if (input.key === 'F11' && !input.control && !input.alt && !input.meta) {
     event.preventDefault();
     setBrowserFullScreen(!isBrowserFullScreen, win);
+    return;
+  }
+
+  // F12: Developer Tools umschalten (standardmäßig unten im Browserfenster angedockt, wie in Chrome)
+  if ((input.key === 'F12' || code === 'F12') && !ctrlOrMeta && !input.alt && !input.shift) {
+    event.preventDefault();
+    const currentActive = (win ? activeTabByWindow.get(win.id) : null) || activeTabId;
+    const currentTab = currentActive ? tabs.get(currentActive) : null;
+
+    let targetWc = null;
+    if (currentTab && currentTab.view && !currentTab.isHome && currentTab.view.webContents && !currentTab.view.webContents.isDestroyed()) {
+      targetWc = currentTab.view.webContents;
+    } else if (sourceWc && !sourceWc.isDestroyed() && (!win || sourceWc !== win.webContents)) {
+      // Absicherung: sourceWc verwenden, wenn es zu einer WebContentsView eines Web-Tabs gehört
+      for (const tab of tabs.values()) {
+        if (!tab.isHome && tab.view && tab.view.webContents === sourceWc) {
+          targetWc = sourceWc;
+          break;
+        }
+      }
+    }
+
+    // Wenn auf der Startseite / New Tab: DevTools des Hauptfensters (Startbildschirm) verwenden
+    if (!targetWc) {
+      targetWc = (win && !win.isDestroyed() ? win.webContents : (mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents : null));
+    }
+
+    if (targetWc) {
+      // Falls zuvor das andere WebContents (z. B. Startfenster vs. Web-Tab) offen war, aufräumen
+      if (win && !win.isDestroyed() && win.webContents !== targetWc && win.webContents.isDevToolsOpened()) {
+        try { win.webContents.closeDevTools(); } catch (e) {}
+      }
+
+      if (targetWc.isDevToolsOpened()) {
+        targetWc.closeDevTools();
+      } else {
+        targetWc.openDevTools({ mode: 'bottom' });
+      }
+    }
     return;
   }
 
@@ -1408,7 +1506,8 @@ async function navigateTab(tabId, targetUrl) {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
-        webviewTag: false
+        webviewTag: false,
+        plugins: true
       }
     });
     configureExternalWebContents(view, tabId, win);
@@ -1955,12 +2054,14 @@ function registerIpcHandlers() {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
-        webviewTag: false
+        webviewTag: false,
+        plugins: true
       }
     });
 
     appWin.setMenuBarVisibility(false);
     appWin.setAutoHideMenuBar(true);
+    appWin.webContents.setUserAgent(CHROME_USER_AGENT);
 
     if (downloadService) {
       downloadService.registerSession(appWin.webContents.session);
@@ -2413,6 +2514,12 @@ function registerIpcHandlers() {
     return await updateService.checkForUpdates();
   });
 
+  ipcMain.handle('updater:download', async (event) => {
+    assertTrustedSender(event);
+    if (!updateService) return { ok: false, error: 'Update-Dienst nicht aktiv' };
+    return await updateService.downloadUpdate();
+  });
+
   ipcMain.handle('updater:install', (event) => {
     assertTrustedSender(event);
     if (!updateService) return { ok: false, error: 'Update-Dienst nicht aktiv' };
@@ -2433,8 +2540,102 @@ function registerIpcHandlers() {
   });
 }
 
+/**
+ * Wartet (im Castlabs ECS-Build) auf die Installation/Aktivierung des Widevine-CDM.
+ * Gibt Laufzeitversionen und den genauen CDM-Status detailliert im Terminal aus.
+ * Schlägt fehl, falls Widevine nicht bereitgestellt werden kann.
+ */
+async function waitForWidevine(timeoutMs = 30000) {
+  if (typeof process !== 'undefined' && process.versions) {
+    console.info('[Worldcraft DRM] Laufzeitversionen (process.versions):', JSON.stringify(process.versions, null, 2));
+  }
+
+  if (!components || typeof components.whenReady !== 'function') {
+    const errorMsg = '[Widevine] Kein Castlabs-ECS-Build erkannt - components.whenReady ist nicht verfügbar.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  let timer;
+  try {
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`[Widevine] CDM nach ${timeoutMs} ms nicht bereit (Timeout).`)), timeoutMs);
+    });
+    await Promise.race([components.whenReady(), timeout]);
+
+    if (components && typeof components.status === 'function') {
+      console.info('[Widevine] Status:', JSON.stringify(components.status(), null, 2));
+    } else {
+      console.info('[Widevine] Bereit (components.whenReady aufgelöst).');
+    }
+    return true;
+  } catch (err) {
+    const errMsg = `[Widevine] Initialisierung fehlgeschlagen: ${err && err.message ? err.message : err}`;
+    console.error(errMsg);
+    if (components && typeof components.status === 'function') {
+      console.info('[Widevine] Status:', JSON.stringify(components.status(), null, 2));
+    }
+    throw new Error(errMsg);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // App lifecycle
 app.whenReady().then(async () => {
+  // Globalen Google Chrome User-Agent auf der Standard-Session erzwingen
+  if (session && session.defaultSession) {
+    session.defaultSession.setUserAgent(CHROME_USER_AGENT);
+
+    // Netflix / Widevine CDM DRM-Permissions sicher gewähren (nur fuer sichere HTTPS / localhost Kontexte)
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+      const reqUrl = (details && details.requestingUrl) || (webContents ? webContents.getURL() : '');
+      const isSecure = reqUrl.startsWith('https://') || reqUrl.startsWith('http://localhost') || reqUrl.startsWith('http://127.0.0.1');
+
+      if ((permission === 'protected-media-identifier' || permission === 'mediaKeySystem') && isSecure) {
+        return callback(true);
+      }
+      if (permission === 'fullscreen') {
+        return callback(true);
+      }
+      return callback(false);
+    });
+
+    session.defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+      const isSecure = requestingOrigin && (requestingOrigin.startsWith('https://') || requestingOrigin.startsWith('http://localhost') || requestingOrigin.startsWith('http://127.0.0.1'));
+      if ((permission === 'protected-media-identifier' || permission === 'mediaKeySystem') && isSecure) {
+        return true;
+      }
+      if (permission === 'fullscreen') {
+        return true;
+      }
+      return false;
+    });
+
+    // Client-Hints (sec-ch-ua) säubern, passend zur tatsächlichen Chromium-Version
+    session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+      const requestHeaders = { ...details.requestHeaders };
+      requestHeaders['User-Agent'] = CHROME_USER_AGENT;
+      if (requestHeaders['sec-ch-ua']) {
+        requestHeaders['sec-ch-ua'] = `"Google Chrome";v="${realChromeMajor}", "Chromium";v="${realChromeMajor}", "Not_A Brand";v="24"`;
+      }
+      if (requestHeaders['sec-ch-ua-mobile']) {
+        requestHeaders['sec-ch-ua-mobile'] = '?0';
+      }
+      if (requestHeaders['sec-ch-ua-platform']) {
+        requestHeaders['sec-ch-ua-platform'] = '"Windows"';
+      }
+      callback({ cancel: false, requestHeaders });
+    });
+  }
+
+  // Widevine-CDM bereitstellen, bevor irgendein Fenster geöffnet wird (Castlabs ECS)
+  try {
+    await waitForWidevine();
+  } catch (widevineErr) {
+    console.error('[Widevine] Kritischer CDM-Fehler beim App-Start:', widevineErr.message);
+  }
+
   // Protokoll-Registrierung für http, https & worldcraft (Windows Standardbrowser)
   try {
     if (process.defaultApp) {
@@ -2464,19 +2665,27 @@ app.whenReady().then(async () => {
 
   downloadService.setUpdateListener((event, data) => {
     for (const win of windows) {
-      if (win && !win.isDestroyed()) {
-        if (event === 'done') {
-          win.webContents.send('downloads:done', data);
-        } else {
-          win.webContents.send('downloads:updated', data);
+      if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+        try {
+          if (event === 'done') {
+            win.webContents.send('downloads:done', data);
+          } else {
+            win.webContents.send('downloads:updated', data);
+          }
+        } catch (e) {
+          console.error('[Downloads IPC Error]:', e.message);
         }
       }
     }
-    if (mainWindow && !mainWindow.isDestroyed() && !windows.has(mainWindow)) {
-      if (event === 'done') {
-        mainWindow.webContents.send('downloads:done', data);
-      } else {
-        mainWindow.webContents.send('downloads:updated', data);
+    if (mainWindow && !mainWindow.isDestroyed() && !windows.has(mainWindow) && mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+      try {
+        if (event === 'done') {
+          mainWindow.webContents.send('downloads:done', data);
+        } else {
+          mainWindow.webContents.send('downloads:updated', data);
+        }
+      } catch (e) {
+        console.error('[Downloads IPC Error]:', e.message);
       }
     }
   });
@@ -2485,13 +2694,26 @@ app.whenReady().then(async () => {
   updateService.init();
   updateService.setListener((state) => {
     for (const win of windows) {
-      if (win && !win.isDestroyed()) {
-        win.webContents.send('updater:status-changed', state);
+      if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+        try {
+          win.webContents.send('updater:status-changed', state);
+        } catch (e) {}
       }
     }
-    if (mainWindow && !mainWindow.isDestroyed() && !windows.has(mainWindow)) {
-      mainWindow.webContents.send('updater:status-changed', state);
+    if (mainWindow && !mainWindow.isDestroyed() && !windows.has(mainWindow) && mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+      try {
+        mainWindow.webContents.send('updater:status-changed', state);
+      } catch (e) {}
     }
+  });
+
+  // Globaler WebContents-Sicherheits-Handler & Crash-Listener:
+  app.on('render-process-gone', (event, webContents, details) => {
+    console.error(`[Worldcraft App Crash] render-process-gone: reason=${details.reason}, exitCode=${details.exitCode}`);
+  });
+
+  app.on('child-process-gone', (event, details) => {
+    console.error(`[Worldcraft App Crash] child-process-gone: type=${details.type}, reason=${details.reason}, exitCode=${details.exitCode}, name=${details.name || 'unnamed'}`);
   });
 
   // Globaler WebContents-Sicherheits-Handler:
@@ -2511,9 +2733,14 @@ app.whenReady().then(async () => {
   // da dieser systemweit (auch in fremden Anwendungen) greifen würde.
 
   if (app.isPackaged) {
-    setTimeout(() => {
-      updateService.checkForUpdates().catch(() => {});
-    }, 4500);
+    const autoCheck = storageService ? storageService.get('autoCheckUpdates', true) : true;
+    if (autoCheck) {
+      setTimeout(() => {
+        updateService.checkForUpdates().catch((err) => {
+          console.log('[UpdateService] Startup check skipped or failed:', err && err.message ? err.message : err);
+        });
+      }, 4500);
+    }
   }
 
   app.on('activate', () => {

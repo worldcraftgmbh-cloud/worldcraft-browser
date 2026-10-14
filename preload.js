@@ -314,6 +314,9 @@ const worldcraftBridge = {
     check: async () => {
       return await ipcRenderer.invoke('updater:check');
     },
+    download: async () => {
+      return await ipcRenderer.invoke('updater:download');
+    },
     install: async () => {
       return await ipcRenderer.invoke('updater:install');
     },

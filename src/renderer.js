@@ -1702,33 +1702,53 @@ function initUpdater() {
         if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
         if (updaterActionRow) updaterActionRow.classList.add('hidden');
       } else if (state.status === 'available') {
-        const ver = (state.updateInfo && state.updateInfo.version) || '';
-        updaterStatusText.textContent = `UPDATE FOUND: V${ver} // DOWNLOADING PATCH...`;
-        if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
-        if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = '10%';
-        if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = '10% DOWNLOADING PATCH...';
-        if (updaterActionRow) updaterActionRow.classList.add('hidden');
+        const currentVer = state.currentVersion || state.version || '1.2.0';
+        const availableVer = (state.updateInfo && state.updateInfo.version) || state.availableVersion || '';
+        updaterStatusText.textContent = `UPDATE VERFÜGBAR: V${availableVer} (Installiert: V${currentVer}) // BEREIT ZUM DOWNLOAD`;
+        if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
+        if (updaterActionRow) updaterActionRow.classList.remove('hidden');
+        const btnDl = document.getElementById('btn-download-update');
+        if (btnDl) {
+          btnDl.classList.remove('hidden');
+          btnDl.disabled = false;
+        }
+        if (btnRestartAndInstall) btnRestartAndInstall.classList.add('hidden');
+        if (btnCheckUpdates) {
+          btnCheckUpdates.disabled = false;
+          btnCheckUpdates.classList.remove('checking');
+        }
       } else if (state.status === 'downloading') {
         const p = (state.progress && state.progress.percent) || 0;
-        const ver = (state.updateInfo && state.updateInfo.version) || '';
-        updaterStatusText.textContent = `UPDATE FOUND: V${ver} // DOWNLOADING PATCH...`;
+        const ver = (state.updateInfo && state.updateInfo.version) || state.availableVersion || '';
+        updaterStatusText.textContent = `LÄDT UPDATE V${ver} HERUNTER...`;
         if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
         if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = `${p}%`;
         if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = `${p}% DOWNLOADING PATCH...`;
         if (updaterActionRow) updaterActionRow.classList.add('hidden');
+        if (btnCheckUpdates) {
+          btnCheckUpdates.disabled = true;
+          btnCheckUpdates.classList.add('checking');
+        }
       } else if (state.status === 'downloaded') {
-        const ver = (state.updateInfo && state.updateInfo.version) || '';
-        updaterStatusText.textContent = `UPDATE V${ver} // READY TO INSTALL`;
+        const ver = (state.updateInfo && state.updateInfo.version) || state.availableVersion || '';
+        updaterStatusText.textContent = `UPDATE V${ver} // BEREIT ZUR INSTALLATION`;
         if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
         if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = '100%';
-        if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = '100% PATCH READY';
+        if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = '100% PATCH READY & VERIFIED';
         if (updaterActionRow) updaterActionRow.classList.remove('hidden');
+        const btnDl = document.getElementById('btn-download-update');
+        if (btnDl) btnDl.classList.add('hidden');
+        if (btnRestartAndInstall) {
+          btnRestartAndInstall.classList.remove('hidden');
+          btnRestartAndInstall.disabled = false;
+        }
         if (btnCheckUpdates) {
           btnCheckUpdates.disabled = false;
           btnCheckUpdates.classList.remove('checking');
         }
       } else if (state.status === 'not-available') {
-        updaterStatusText.textContent = 'SYSTEM UP TO DATE // KEINE UPDATES VORHANDEN';
+        const currentVer = state.currentVersion || state.version || '1.2.0';
+        updaterStatusText.textContent = `SYSTEM UP TO DATE // V${currentVer} IST DIE NEUESTE VERSION`;
         if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
         if (updaterActionRow) updaterActionRow.classList.add('hidden');
         if (btnCheckUpdates) {
@@ -1736,7 +1756,8 @@ function initUpdater() {
           btnCheckUpdates.classList.remove('checking');
         }
       } else if (state.status === 'error') {
-        updaterStatusText.textContent = 'SYSTEM UP TO DATE // KEINE UPDATES VORHANDEN';
+        const errText = state.error || 'Fehler bei der Updateprüfung';
+        updaterStatusText.textContent = `UPDATE FEHLER // ${errText.toUpperCase()}`;
         if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
         if (updaterActionRow) updaterActionRow.classList.add('hidden');
         if (btnCheckUpdates) {

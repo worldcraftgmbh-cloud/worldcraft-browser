@@ -110,3 +110,101 @@ test('Stability: Tab Drag Ghost helper and IPC contracts', () => {
   assert.equal(rendererCode.includes('.tabs.dragEnd()'), true, 'renderer.js must call dragEnd on drop/cancel');
 });
 
+test('Release: Default-Browser NSIS registration is wired into the installer', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  assert.equal(pkg.build.nsis.include, 'build/installer.nsh', 'package.json must include build/installer.nsh');
+
+  const nsh = fs.readFileSync(path.join(root, 'build', 'installer.nsh'), 'utf8');
+  for (const needle of [
+    '!macro customInstall',
+    '!macro customUnInstall',
+    'Software\\Clients\\StartMenuInternet\\WorldcraftBrowser\\Capabilities\\URLAssociations',
+    'Software\\Clients\\StartMenuInternet\\WorldcraftBrowser\\Capabilities\\FileAssociations',
+    'Software\\RegisteredApplications',
+    'WorldcraftBrowserURL',
+    'WorldcraftBrowserHTML',
+    'DeleteRegKey HKCU "Software\\Clients\\StartMenuInternet\\WorldcraftBrowser"'
+  ]) {
+    assert.equal(nsh.includes(needle), true, `installer.nsh must contain: ${needle}`);
+  }
+});
+
+test('Release: Castlabs ECS (Widevine) build, components.whenReady and VMP hook', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  assert.equal(/castlabs\/electron-releases#v\d+\.\d+\.\d+\+wvcus$/.test(pkg.devDependencies.electron), true, 'electron must come from Castlabs ECS (+wvcus)');
+  assert.equal(pkg.build.electronDist, 'node_modules/electron/dist', 'electron-builder must package the ECS binaries');
+  assert.equal(pkg.build.afterSign, 'scripts/vmp-sign.js', 'afterSign must run the VMP signing hook');
+
+  const mainCode = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+  assert.equal(mainCode.includes('components.whenReady()'), true, 'main.js must wait for components.whenReady()');
+  assert.equal(mainCode.indexOf('await waitForWidevine()') < mainCode.indexOf('createMainWindow(startupUrl)'), true, 'Widevine must be awaited before the first window is created');
+
+  const hook = fs.readFileSync(path.join(root, 'scripts', 'vmp-sign.js'), 'utf8');
+  assert.equal(hook.includes('castlabs_evs.vmp'), true, 'hook must call castlabs_evs.vmp');
+  assert.equal(hook.includes('sign-pkg'), true, 'hook must use sign-pkg');
+  assert.equal(typeof require('../scripts/vmp-sign.js'), 'function', 'hook must export an async function');
+});
+
+test('Netflix / DRM: Global Google Chrome User-Agent prevents E100 error', () => {
+  const mainCode = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+  assert.equal(mainCode.includes('CHROME_USER_AGENT ='), true, 'main.js must define CHROME_USER_AGENT');
+  assert.equal(mainCode.includes('app.userAgentFallback = CHROME_USER_AGENT'), true, 'main.js must set app.userAgentFallback');
+  assert.equal(mainCode.includes('session.defaultSession.setUserAgent(CHROME_USER_AGENT)'), true, 'main.js must configure defaultSession UA');
+  assert.equal(mainCode.includes('wc.setUserAgent(CHROME_USER_AGENT)'), true, 'main.js must enforce UA on external WebContentsView');
+
+  // Verify dynamic UA definition matching real Chromium version
+  assert.equal(mainCode.includes('realChromeVersion'), true, 'main.js must read realChromeVersion');
+  assert.equal(mainCode.includes('realChromeMajor'), true, 'main.js must read realChromeMajor');
+  assert.equal(mainCode.includes('Chrome/${realChromeVersion}'), true, 'UA must dynamically interpolate realChromeVersion');
+  assert.equal(mainCode.includes('Windows NT 10.0'), true, 'UA must target Windows NT 10.0');
+
+  // Verify DRM switches, permissions, plugins and diagnostics
+  assert.equal(mainCode.includes("app.commandLine.appendSwitch('no-verify-widevine-cdm')"), false, 'main.js must not include blind flag no-verify-widevine-cdm');
+  assert.equal(mainCode.includes("plugins: true"), true);
+  assert.equal(mainCode.includes("protected-media-identifier"), true);
+  assert.equal(mainCode.includes("mediaKeySystem"), true);
+  assert.equal(mainCode.includes("sec-ch-ua"), true);
+  assert.equal(mainCode.includes("components.status"), true, 'main.js must inspect components.status');
+  assert.equal(mainCode.includes("process.versions"), true, 'main.js must log process.versions');
+  assert.equal(mainCode.includes("ignore-gpu-blocklist"), false, 'main.js must not include unstable flag ignore-gpu-blocklist');
+});
+
+test('Stability: DownloadService deduplicates session registration', () => {
+  const service = new DownloadService(root, { shell: {} });
+  let listeners = 0;
+  const mockSession = {
+    on(event, handler) {
+      if (event === 'will-download') listeners++;
+    }
+  };
+
+  service.registerSession(mockSession);
+  service.registerSession(mockSession);
+  service.registerSession(mockSession);
+
+  assert.equal(listeners, 1, 'registerSession must attach will-download exactly once per session');
+  service.stopPruning();
+});
+
+test('Stability: Crash Guards and Scoped Permissions in main.js', () => {
+  const mainCode = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+  assert.equal(mainCode.includes("wc.on('render-process-gone'"), true, 'must handle tab render-process-gone');
+  assert.equal(mainCode.includes("app.on('render-process-gone'"), true, 'must handle global render-process-gone');
+  assert.equal(mainCode.includes("app.on('child-process-gone'"), true, 'must handle child-process-gone');
+  assert.equal(mainCode.includes("reqUrl.startsWith('https://')"), true, 'protected-media-identifier must be scoped to secure origins');
+});
+
+test('Shortcuts: F12 toggles DevTools docked at bottom (mode: bottom) on active WebContentsView or start screen', () => {
+  const mainCode = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+  assert.equal(mainCode.includes("input.key === 'F12' || code === 'F12'"), true, 'main.js must handle F12 in before-input-event routing');
+  assert.equal(mainCode.includes('targetWc.isDevToolsOpened()'), true, 'main.js must check isDevToolsOpened for F12 toggle');
+  assert.equal(mainCode.includes('targetWc.closeDevTools()'), true, 'main.js must close DevTools if already opened');
+  assert.equal(mainCode.includes("targetWc.openDevTools({ mode: 'bottom' })"), true, 'main.js must open DevTools docked at bottom');
+  assert.equal(mainCode.includes('!currentTab.isHome'), true, 'main.js must check if current tab is home');
+  assert.equal(mainCode.includes('targetWc = (win && !win.isDestroyed() ? win.webContents'), true, 'main.js must fallback to win.webContents on start screen');
+  assert.equal(mainCode.includes("input.key === 'F11' && !input.control && !input.alt && !input.meta"), true, 'F11 fullscreen shortcut must remain untouched');
+});
+
+
+
+

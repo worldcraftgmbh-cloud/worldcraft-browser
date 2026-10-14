@@ -70,6 +70,8 @@ const updaterMatrixProgressFill = document.getElementById('updater-matrix-progre
 const updaterMatrixProgressText = document.getElementById('updater-matrix-progress-text');
 const updaterActionRow = document.getElementById('updater-action-row');
 const btnRestartAndInstall = document.getElementById('btn-restart-and-install');
+const btnDownloadUpdate = document.getElementById('btn-download-update');
+const chkAutoCheckUpdates = document.getElementById('chk-auto-check-updates');
 
 const neuralKeyLabel = document.getElementById('neural-key-label');
 const settingNeuralKey = document.getElementById('setting-neural-key');
@@ -308,6 +310,9 @@ function renderUpdateState(state) {
 
   updaterTerminalBox.classList.remove('hidden');
 
+  const currentVer = state.currentVersion || state.version || '1.2.0';
+  const availableVer = (state.updateInfo && state.updateInfo.version) || state.availableVersion || '';
+
   if (state.status === 'checking') {
     updaterStatusText.textContent = 'PINGING UPDATE SERVERS...';
     if (btnCheckUpdates) {
@@ -316,34 +321,59 @@ function renderUpdateState(state) {
     }
     if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
     if (updaterActionRow) updaterActionRow.classList.add('hidden');
+    if (btnDownloadUpdate) btnDownloadUpdate.classList.add('hidden');
+    if (btnRestartAndInstall) btnRestartAndInstall.classList.add('hidden');
   } else if (state.status === 'available') {
-    const ver = (state.updateInfo && state.updateInfo.version) || '';
-    updaterStatusText.textContent = `UPDATE FOUND: V${ver} // DOWNLOADING PATCH...`;
-    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
-    if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = '10%';
-    if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = '10% DOWNLOADING PATCH...';
-    if (updaterActionRow) updaterActionRow.classList.add('hidden');
-  } else if (state.status === 'downloading') {
-    const p = (state.progress && state.progress.percent) || 0;
-    const ver = (state.updateInfo && state.updateInfo.version) || '';
-    updaterStatusText.textContent = `UPDATE FOUND: V${ver} // DOWNLOADING PATCH...`;
-    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
-    if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = `${p}%`;
-    if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = `${p}% DOWNLOADING PATCH...`;
-    if (updaterActionRow) updaterActionRow.classList.add('hidden');
-  } else if (state.status === 'downloaded') {
-    const ver = (state.updateInfo && state.updateInfo.version) || '';
-    updaterStatusText.textContent = `UPDATE V${ver} // READY TO INSTALL`;
-    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
-    if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = '100%';
-    if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = '100% PATCH READY';
+    updaterStatusText.textContent = `UPDATE VERFÜGBAR: V${availableVer} (Installiert: V${currentVer}) // BEREIT ZUM DOWNLOAD`;
+    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
     if (updaterActionRow) updaterActionRow.classList.remove('hidden');
+    if (btnDownloadUpdate) {
+      btnDownloadUpdate.classList.remove('hidden');
+      btnDownloadUpdate.disabled = false;
+    }
+    if (btnRestartAndInstall) btnRestartAndInstall.classList.add('hidden');
     if (btnCheckUpdates) {
       btnCheckUpdates.disabled = false;
       btnCheckUpdates.classList.remove('checking');
     }
-  } else if (state.status === 'not-available' || state.status === 'error') {
-    updaterStatusText.textContent = 'SYSTEM UP TO DATE // KEINE UPDATES VORHANDEN';
+  } else if (state.status === 'downloading') {
+    const p = (state.progress && state.progress.percent) || 0;
+    const speed = state.progress && state.progress.bytesPerSecond ? ` @ ${(state.progress.bytesPerSecond / 1024 / 1024).toFixed(1)} MB/s` : '';
+    updaterStatusText.textContent = `LÄDT UPDATE V${availableVer || ''} HERUNTER...`;
+    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
+    if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = `${p}%`;
+    if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = `${p}% DOWNLOADING PATCH${speed}`;
+    if (updaterActionRow) updaterActionRow.classList.add('hidden');
+    if (btnCheckUpdates) {
+      btnCheckUpdates.disabled = true;
+      btnCheckUpdates.classList.add('checking');
+    }
+  } else if (state.status === 'downloaded') {
+    updaterStatusText.textContent = `UPDATE V${availableVer || ''} HERUNTERGELADEN // BEREIT ZUR INSTALLATION`;
+    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.remove('hidden');
+    if (updaterMatrixProgressFill) updaterMatrixProgressFill.style.width = '100%';
+    if (updaterMatrixProgressText) updaterMatrixProgressText.textContent = '100% PATCH READY & VERIFIED';
+    if (updaterActionRow) updaterActionRow.classList.remove('hidden');
+    if (btnDownloadUpdate) btnDownloadUpdate.classList.add('hidden');
+    if (btnRestartAndInstall) {
+      btnRestartAndInstall.classList.remove('hidden');
+      btnRestartAndInstall.disabled = false;
+    }
+    if (btnCheckUpdates) {
+      btnCheckUpdates.disabled = false;
+      btnCheckUpdates.classList.remove('checking');
+    }
+  } else if (state.status === 'not-available') {
+    updaterStatusText.textContent = `SYSTEM UP TO DATE // V${currentVer} IST DIE NEUESTE VERSION`;
+    if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
+    if (updaterActionRow) updaterActionRow.classList.add('hidden');
+    if (btnCheckUpdates) {
+      btnCheckUpdates.disabled = false;
+      btnCheckUpdates.classList.remove('checking');
+    }
+  } else if (state.status === 'error') {
+    const errText = state.error || 'Fehler bei der Updateprüfung';
+    updaterStatusText.textContent = `UPDATE FEHLER // ${errText.toUpperCase()}`;
     if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
     if (updaterActionRow) updaterActionRow.classList.add('hidden');
     if (btnCheckUpdates) {
@@ -675,12 +705,19 @@ function setupEventListeners() {
       btnCheckUpdates.classList.add('checking');
       if (updaterMatrixProgressWrap) updaterMatrixProgressWrap.classList.add('hidden');
       if (updaterActionRow) updaterActionRow.classList.add('hidden');
+      if (btnDownloadUpdate) btnDownloadUpdate.classList.add('hidden');
+      if (btnRestartAndInstall) btnRestartAndInstall.classList.add('hidden');
 
       if (window.worldcraft && window.worldcraft.updater) {
         try {
-          await window.worldcraft.updater.check();
+          const res = await window.worldcraft.updater.check();
+          if (res && !res.ok && res.error) {
+            if (updaterStatusText) updaterStatusText.textContent = `UPDATE FEHLER // ${res.error.toUpperCase()}`;
+            btnCheckUpdates.disabled = false;
+            btnCheckUpdates.classList.remove('checking');
+          }
         } catch (e) {
-          if (updaterStatusText) updaterStatusText.textContent = 'SYSTEM UP TO DATE // KEINE UPDATES VORHANDEN';
+          if (updaterStatusText) updaterStatusText.textContent = `UPDATE FEHLER // ${(e.message || String(e)).toUpperCase()}`;
           btnCheckUpdates.disabled = false;
           btnCheckUpdates.classList.remove('checking');
         }
@@ -694,11 +731,37 @@ function setupEventListeners() {
     });
   }
 
+  // Download Update Button (Startet Download erst nach Klick)
+  if (btnDownloadUpdate) {
+    btnDownloadUpdate.addEventListener('click', async () => {
+      btnDownloadUpdate.disabled = true;
+      if (updaterStatusText) updaterStatusText.textContent = 'STARTE DOWNLOAD DES UPDATE-PATCHES...';
+      if (window.worldcraft && window.worldcraft.updater && typeof window.worldcraft.updater.download === 'function') {
+        const res = await window.worldcraft.updater.download();
+        if (res && !res.ok) {
+          if (updaterStatusText) updaterStatusText.textContent = `DOWNLOAD FEHLER // ${(res.error || 'Fehler beim Starten').toUpperCase()}`;
+          btnDownloadUpdate.disabled = false;
+        }
+      }
+    });
+  }
+
   // Restart & Install Button
   if (btnRestartAndInstall) {
     btnRestartAndInstall.addEventListener('click', async () => {
       if (window.worldcraft && window.worldcraft.updater) {
         await window.worldcraft.updater.install();
+      }
+    });
+  }
+
+  // Startup Auto-Check Setting Checkbox
+  if (chkAutoCheckUpdates) {
+    chkAutoCheckUpdates.checked = currentSettings.autoCheckUpdates !== false;
+    chkAutoCheckUpdates.addEventListener('change', async () => {
+      currentSettings.autoCheckUpdates = chkAutoCheckUpdates.checked;
+      if (window.worldcraft && window.worldcraft.storage) {
+        await window.worldcraft.storage.set('settings', currentSettings);
       }
     });
   }
