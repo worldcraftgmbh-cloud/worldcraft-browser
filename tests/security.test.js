@@ -192,3 +192,53 @@ test('Security: Global Window Open Handler & Internal Tab Navigation Enforcement
   assert.equal(code.includes('shell.openExternal'), false, 'Must not call shell.openExternal for links');
 });
 
+test('Security: Verified Auth Popup Whitelist for OAuth/SSO Flows', () => {
+  const { isVerifiedAuthPopup } = require('../services/url-helper');
+  const mainPath = path.resolve(__dirname, '..', 'main.js');
+  const code = fs.readFileSync(mainPath, 'utf8');
+
+  // Verify main.js uses isVerifiedAuthPopup
+  assert.equal(code.includes('isVerifiedAuthPopup(url)'), true, 'main.js must evaluate isVerifiedAuthPopup');
+
+  // 1. Google OAuth & Account endpoints
+  assert.equal(isVerifiedAuthPopup('https://accounts.google.com/o/oauth2/v2/auth?client_id=123'), true);
+  assert.equal(isVerifiedAuthPopup('https://accounts.google.com/signin/v2/identifier'), true);
+  assert.equal(isVerifiedAuthPopup('https://accounts.google.com/ServiceLogin'), true);
+  // Non-auth Google URLs
+  assert.equal(isVerifiedAuthPopup('https://www.google.com/search?q=test'), false);
+  assert.equal(isVerifiedAuthPopup('https://google.com/maps'), false);
+
+  // 2. Twitch Identity, Passport & OAuth
+  assert.equal(isVerifiedAuthPopup('https://id.twitch.tv/oauth2/authorize?client_id=xyz'), true);
+  assert.equal(isVerifiedAuthPopup('https://passport.twitch.tv/authentications/new'), true);
+  assert.equal(isVerifiedAuthPopup('https://www.twitch.tv/login'), true);
+  assert.equal(isVerifiedAuthPopup('https://twitch.tv/signup'), true);
+  // Non-auth Twitch URLs
+  assert.equal(isVerifiedAuthPopup('https://www.twitch.tv/directory'), false);
+  assert.equal(isVerifiedAuthPopup('https://twitch.tv/videos/12345'), false);
+
+  // 3. Discord Identity & OAuth
+  assert.equal(isVerifiedAuthPopup('https://discord.com/login'), true);
+  assert.equal(isVerifiedAuthPopup('https://discord.com/oauth2/authorize?client_id=abc'), true);
+  assert.equal(isVerifiedAuthPopup('https://discordapp.com/oauth2/authorize?client_id=abc'), true);
+  // Non-auth Discord URLs
+  assert.equal(isVerifiedAuthPopup('https://discord.com/channels/@me'), false);
+  assert.equal(isVerifiedAuthPopup('https://discord.com/nitro'), false);
+
+  // 4. Other verified providers
+  assert.equal(isVerifiedAuthPopup('https://github.com/login/oauth/authorize?client_id=1'), true);
+  assert.equal(isVerifiedAuthPopup('https://login.microsoftonline.com/common/oauth2/v2.0/authorize'), true);
+  assert.equal(isVerifiedAuthPopup('https://login.live.com/oauth20_authorize.srf'), true);
+  assert.equal(isVerifiedAuthPopup('https://appleid.apple.com/auth/authorize'), true);
+  assert.equal(isVerifiedAuthPopup('https://steamcommunity.com/openid/login'), true);
+
+  // 5. Insecure / arbitrary URLs must be blocked
+  assert.equal(isVerifiedAuthPopup('http://accounts.google.com/oauth'), false, 'Insecure HTTP must be rejected');
+  assert.equal(isVerifiedAuthPopup('https://evil-accounts.google.com/oauth'), false, 'Spoofed domains must be rejected');
+  assert.equal(isVerifiedAuthPopup('https://example.com/login'), false, 'Arbitrary domains must be rejected');
+  assert.equal(isVerifiedAuthPopup('javascript:alert(1)'), false, 'Dangerous schemes must be rejected');
+  assert.equal(isVerifiedAuthPopup(''), false);
+  assert.equal(isVerifiedAuthPopup(null), false);
+  assert.equal(isVerifiedAuthPopup(undefined), false);
+});
+

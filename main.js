@@ -9,7 +9,7 @@ const { pathToFileURL } = require('url');
 const { StorageService } = require('./services/storage-service');
 const { GeminiService } = require('./services/gemini-service');
 const { AiService } = require('./services/ai-service');
-const { normalizeUrl, extractTargetUrlFromArgs } = require('./services/url-helper');
+const { normalizeUrl, extractTargetUrlFromArgs, isVerifiedAuthPopup } = require('./services/url-helper');
 const { DownloadService } = require('./services/download-service');
 const { UpdateService } = require('./services/update-service');
 const { buildTabGhostHtml } = require('./services/tab-ghost');
@@ -514,10 +514,40 @@ function configureExternalWebContents(view, tabId, win = null) {
   }
 
   // Globales Abfangen von window.open / target="_blank":
-  // Verhindert separates OS/Electron-Fenster und leitet alle Links intern an createNewTab weiter.
+  // Verifizierte Authentifizierungs-Popups (Google OAuth, Twitch Passport, Discord OAuth etc.)
+  // werden in einem abgesicherten Popup-Fenster geöffnet, damit window.opener und postMessage erhalten bleiben.
+  // Alle regulären Links werden intern an createNewTab weitergeleitet.
   wc.setWindowOpenHandler(({ url }) => {
+    if (isVerifiedAuthPopup(url)) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 550,
+          height: 700,
+          minWidth: 400,
+          minHeight: 500,
+          autoHideMenuBar: true,
+          webPreferences: {
+            sandbox: true,
+            contextIsolation: true,
+            nodeIntegration: false,
+            plugins: true
+          }
+        }
+      };
+    }
     createNewTab(url);
     return { action: 'deny' };
+  });
+
+  wc.on('did-create-window', (popupWin) => {
+    if (popupWin && !popupWin.isDestroyed()) {
+      popupWin.setMenuBarVisibility(false);
+      popupWin.setAutoHideMenuBar(true);
+      if (downloadService) {
+        downloadService.registerSession(popupWin.webContents.session);
+      }
+    }
   });
 
   // Block dangerous schemes during navigation & intercept internal URLs
@@ -2718,8 +2748,27 @@ app.whenReady().then(async () => {
 
   // Globaler WebContents-Sicherheits-Handler:
   // Fängt ausnahmslos jedes window.open und jeden target="_blank"-Klick app-weit ab.
+  // Erlaubt verifizierte OAuth-Popups mit sicheren WebPreferences und leitet reguläre Links intern an createNewTab weiter.
   app.on('web-contents-created', (event, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
+      if (isVerifiedAuthPopup(url)) {
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 550,
+            height: 700,
+            minWidth: 400,
+            minHeight: 500,
+            autoHideMenuBar: true,
+            webPreferences: {
+              sandbox: true,
+              contextIsolation: true,
+              nodeIntegration: false,
+              plugins: true
+            }
+          }
+        };
+      }
       createNewTab(url);
       return { action: 'deny' };
     });

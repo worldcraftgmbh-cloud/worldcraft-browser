@@ -177,9 +177,76 @@ function extractTargetUrlFromArgs(args) {
   return null;
 }
 
+/**
+ * Determines whether a popup request is an intentional, verified OAuth or SSO authentication flow
+ * (Google, Twitch, Discord, GitHub, Microsoft, Apple, Steam) that requires window.opener and postMessage
+ * to stay connected, rather than being forced into a new browser tab.
+ * Arbitrary web links, ads, or untrusted URLs are rejected.
+ *
+ * @param {string} targetUrl - The requested popup URL
+ * @returns {boolean}
+ */
+function isVerifiedAuthPopup(targetUrl) {
+  if (!targetUrl || typeof targetUrl !== 'string') return false;
+  try {
+    const parsed = new URL(targetUrl.trim());
+    if (parsed.protocol !== 'https:') return false;
+
+    const host = parsed.hostname.toLowerCase();
+    const pathname = parsed.pathname.toLowerCase();
+
+    // 1. Google Accounts / OAuth 2.0
+    // e.g. https://accounts.google.com/o/oauth2/v2/auth, /signin, /ServiceLogin
+    if (host === 'accounts.google.com') {
+      return true;
+    }
+
+    // 2. Twitch Identity, Passport & OAuth
+    // e.g. https://id.twitch.tv/oauth2/authorize, https://passport.twitch.tv/authentications/new
+    if (host === 'id.twitch.tv' || host === 'passport.twitch.tv') {
+      return true;
+    }
+    if ((host === 'twitch.tv' || host === 'www.twitch.tv') &&
+        (pathname.startsWith('/login') || pathname.startsWith('/signup') || pathname.startsWith('/oauth'))) {
+      return true;
+    }
+
+    // 3. Discord Identity & OAuth 2.0
+    // e.g. https://discord.com/oauth2/authorize, https://discord.com/login, https://discordapp.com/oauth2/authorize
+    if (host === 'discord.com' || host === 'discordapp.com') {
+      if (pathname.startsWith('/login') || pathname.startsWith('/oauth2') || pathname.startsWith('/api/oauth2')) {
+        return true;
+      }
+    }
+
+    // 4. Other verified major SSO / Identity providers commonly integrated with Discord/Twitch/Google
+    // GitHub OAuth
+    if (host === 'github.com' && pathname.startsWith('/login/oauth')) {
+      return true;
+    }
+    // Microsoft Live / Azure AD
+    if (host === 'login.microsoftonline.com' || host === 'login.live.com') {
+      return true;
+    }
+    // Apple Sign-In
+    if (host === 'appleid.apple.com') {
+      return true;
+    }
+    // Steam OpenID
+    if (host === 'steamcommunity.com' && pathname.startsWith('/openid')) {
+      return true;
+    }
+
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
 module.exports = {
   normalizeUrl,
   extractTargetUrlFromArgs,
+  isVerifiedAuthPopup,
   SEARCH_ENGINES,
   BLOCKED_SCHEMES
 };
