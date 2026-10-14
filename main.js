@@ -503,6 +503,48 @@ function createNativeContextMenu(wc, params, win = null) {
 }
 
 /**
+ * Injects an informative and user-friendly explanation if Google redirects an account sign-in
+ * to /v3/signin/rejected (due to Google's Disallowed User-Agent / Embedded WebView policy).
+ * Provides a one-click button to return to the previous website (history.back()) so the user
+ * can continue using the original page without being stranded on Google's generic error page.
+ */
+function handleGoogleRejectedNotice(webContents) {
+  if (!webContents || webContents.isDestroyed()) return;
+  try {
+    const currentUrl = webContents.getURL();
+    if (currentUrl && currentUrl.includes('accounts.google.com') && currentUrl.includes('rejected')) {
+      webContents.executeJavaScript(`
+        (() => {
+          if (document.getElementById('worldcraft-google-notice')) return;
+          const banner = document.createElement('div');
+          banner.id = 'worldcraft-google-notice';
+          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(135deg,#13131e,#222238);border-bottom:2px solid #00f0ff;color:#fff;padding:14px 20px;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:space-between;gap:16px;box-sizing:border-box;';
+          banner.innerHTML = \`
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:22px;line-height:1;">ℹ️</span>
+              <div>
+                <div style="font-weight:700;font-size:13px;color:#00f0ff;margin-bottom:2px;">Hinweis zur Google-Kontoanmeldung</div>
+                <div style="font-size:12px;color:#d1d5db;line-height:1.4;">
+                  Google erlaubt die Passworteingabe aus Sicherheitsgründen nicht in Desktop-Browsern (Embedded WebViews).
+                  Nutzen Sie auf der gewünschten Website bitte eine alternative Anmeldemethode (z.&nbsp;B. E-Mail/Passwort, GitHub oder Discord).
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <button id="wc-btn-goback" style="background:#00f0ff;color:#000;border:none;padding:8px 14px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;">← Zurück zur Website</button>
+              <button id="wc-btn-dismiss" style="background:transparent;color:#9ca3af;border:1px solid #4b5563;padding:8px 12px;border-radius:4px;font-size:12px;cursor:pointer;">Schließen</button>
+            </div>
+          \`;
+          document.body.prepend(banner);
+          document.getElementById('wc-btn-goback')?.addEventListener('click', () => { window.history.back(); });
+          document.getElementById('wc-btn-dismiss')?.addEventListener('click', () => { banner.remove(); });
+        })()
+      `).catch(() => {});
+    }
+  } catch (e) {}
+}
+
+/**
  * Applies security policies to external web contents
  */
 function configureExternalWebContents(view, tabId, win = null) {
@@ -547,6 +589,9 @@ function configureExternalWebContents(view, tabId, win = null) {
       if (downloadService) {
         downloadService.registerSession(popupWin.webContents.session);
       }
+      popupWin.webContents.on('did-stop-loading', () => {
+        handleGoogleRejectedNotice(popupWin.webContents);
+      });
     }
   });
 
@@ -649,6 +694,7 @@ function configureExternalWebContents(view, tabId, win = null) {
       const tabWin = win || getWindowForTab(tab);
       broadcastTabState(tabWin);
       notifyNavState(tabId, wc, tabWin);
+      handleGoogleRejectedNotice(wc);
 
       // Automatic Language Detection for Page Translation Banner
       if (!tab.isHome && tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {

@@ -205,6 +205,14 @@ test('Shortcuts: F12 toggles DevTools docked at bottom (mode: bottom) on active 
   assert.equal(mainCode.includes("input.key === 'F11' && !input.control && !input.alt && !input.meta"), true, 'F11 fullscreen shortcut must remain untouched');
 });
 
+test('Stability: Google Sign-in rejection handler informs user and preserves back navigation', () => {
+  const mainCode = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+  assert.equal(mainCode.includes('function handleGoogleRejectedNotice(webContents)'), true, 'main.js must define handleGoogleRejectedNotice');
+  assert.equal(mainCode.includes("currentUrl.includes('accounts.google.com') && currentUrl.includes('rejected')"), true, 'must target Google accounts rejected URLs');
+  assert.equal(mainCode.includes('worldcraft-google-notice'), true, 'must inject user-friendly explanation notice');
+  assert.equal(mainCode.includes('window.history.back()'), true, 'must provide back button to return to previous website');
+});
+
 
 
 
