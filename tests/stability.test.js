@@ -116,6 +116,8 @@ test('Release: Default-Browser NSIS registration is wired into the installer', (
 
   const nsh = fs.readFileSync(path.join(root, 'build', 'installer.nsh'), 'utf8');
   for (const needle of [
+    '!macro customInit',
+    'Das Projekt Worldcraft Browser wurde eingestellt',
     '!macro customInstall',
     '!macro customUnInstall',
     'Software\\Clients\\StartMenuInternet\\WorldcraftBrowser\\Capabilities\\URLAssociations',

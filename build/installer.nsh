@@ -1,6 +1,11 @@
 ; Worldcraft Browser - Windows-Standardbrowser-Registrierung (HKCU, keine Admin-Rechte noetig)
 ; Wird ueber package.json -> build.nsis.include in den electron-builder NSIS-Installer eingebunden.
 
+!macro customInit
+  MessageBox MB_ICONSTOP|MB_OK "Das Projekt Worldcraft Browser wurde eingestellt.$\r$\n$\r$\nDer Browser wird nicht mehr weitergefuehrt oder unterstuetzt."
+  Quit
+!macroEnd
+
 !macro customInstall
   ; --- 1. Anwendung unter StartMenuInternet ---
   WriteRegStr HKCU "Software\Clients\StartMenuInternet\WorldcraftBrowser" "" "Worldcraft Browser"

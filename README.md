@@ -1,3 +1,9 @@
+# ⚠️ PROJEKT EINGESTELLT // PROJECT DISCONTINUED ⚠️
+
+> **Wichtiger Hinweis:** Das Projekt **Worldcraft Browser** wurde offiziell eingestellt. Der Download, die Weiterentwicklung und der Support wurden dauerhaft beendet.
+
+---
+
 # Worldcraft Browser // Matrix Edition
 
 > **Worldcraft Browser** ist ein moderner, eigenständiger Desktop-Webbrowser im futuristischen Cyberpunk-/Matrix-Design, entwickelt von **Worldcraft Systems**.
